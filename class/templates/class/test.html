@@ -1,0 +1,96 @@
+{% extends 'index/base.html' %}
+{% load humanize %}
+{% block title %}Test{% endblock %}
+{% block content %}
+
+
+
+<!-- <ul>
+    {% for class in teacher_classes %}
+        <li>{{ class }}</li>
+        <ul>
+            {% for chapter in class.classmaterialschapter_set.all %}
+                <li>{{ chapter }}</li>
+                <ul>
+                    {% for module in chapter.classmaterialsmodule_set.all %}
+                        <li>{{module}}</li>
+                    {% endfor %}
+                </ul>
+            {% endfor %}
+        </ul>
+    {% endfor %}
+</ul> -->
+
+{% for msg in messages %}
+{{msg}}
+{% endfor %}
+
+{% if teacher_classes %}
+<form action="" method="POST">
+    {% csrf_token %}
+    <div class="form-group col-md-4">
+        <label for="inputState">Class</label>
+        <select name='class' id="inputState" class="form-control">
+            <option selected>Select a class </option>
+            {% for class in teacher_classes %}
+            <option value="{{class.id}}">{{ class }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button class="btn btn-primary" type="submit">Next</button>
+</form>
+{% elif class %}
+<form action="" method="POST">
+    {% csrf_token %}
+    <div class="form-group col-md-4">
+        <label for="inputState">Chapter</label>
+        <select name='chapter' id="inputState" class="form-control">
+            <option selected>Select a Chapter </option>
+            {% for chapter in class.classmaterialschapter_set.all %}
+            <option value="{{chapter.id}}">{{ chapter }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button class="btn btn-primary" type="submit">Next</button>
+</form>
+{% elif chapter %}
+<form action="" method="POST">
+    {% csrf_token %}
+    <div class="form-group col-md-4">
+        <label for="inputState">module</label>
+        <select name='module' id="inputState" class="form-control">
+            <option selected>Select a module </option>
+            {% for module in chapter.classmaterialsmodule_set.all %}
+            <option value="{{module.id}}">{{ module }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button class="btn btn-primary" type="submit">Next</button>
+</form>
+{% elif all_info %}
+{% if messages %}
+<!-- asd -->
+{% else %}
+Uploading to:
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        {% for info in all_info %}
+        <li class="breadcrumb-item">{{info}}</li>
+        {% endfor %}
+    </ol>
+</nav>
+<form action="" method="POST">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label class="form-label" for="name">Title</label>
+        <input class="form-control" type="text" id="name" name="name" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="url">URL for the material</label>
+        <input class="form-control" type="url" id="url" name="url" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+{% endif %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,99 @@
+{% load static %}
+<!DOCTYPE>
+
+<html>
+    <head>
+        <title> {% block title %}index{% endblock %} </title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+		<script src="https://code.jquery.com/jquery-3.5.1.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
+	    <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700,800,900" rel="stylesheet">
+		<script src="https://kit.fontawesome.com/fadb5bc4c2.js" crossorigin="anonymous"></script>
+		
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+		<link rel="stylesheet" href="{% static 'index/css/style.css' %}">
+		<link rel="stylesheet" href="{% static 'index/css/bootstrap.min.css' %}">
+    </head>
+    <body>
+        <div class="wrapper d-flex align-items-stretch">
+			<nav id="sidebar">
+				<div class="custom-menu">
+					<button type="button" id="sidebarCollapse" class="btn btn-primary">
+	          <i class="fa fa-bars"></i>
+	          <span class="sr-only">Toggle Menu</span>
+	        </button>
+        </div>
+				<div class="p-4">
+		  		<h1><a href="{% url 'index:index' %}" class="logo">School Name <span>
+				  	{% if request.user.is_authenticated %}
+					  {{request.user}} ({{request.user.groups.all.0}})
+					{%else%}
+					 <!--continue-->
+					{% endif %}
+				  </span></a></h1>
+				  {% if request.user.is_authenticated %}
+				  <p><a href="{% url 'index:logout' %}" class="text-info">Logout</a></p>
+				  {% endif %}
+	        <ul class="list-unstyled components mb-5">
+	          <li class="active url_li">
+	            <a href="{% url 'class:index' %}" class='url'><span class="fa fa-home mr-3"></span> Home</a>
+	          </li>
+			    {% if request.user.is_authenticated %}
+				{% for class in classes %}
+					<li class="url_li">
+						<a href="{% url 'class:class_info' class.name%}" class='url'><span class="fa fa-user mr-3"></span> {{class}}</a>
+					</li>
+				{% endfor %}
+				{% endif %}
+
+	        </ul>
+
+	        <div class="mb-5">
+						<h3 class="h6 mb-3">Subscribe for newsletter</h3>
+						<form action="#" class="subscribe-form">
+	            <div class="form-group d-flex">
+	            	<div class="icon"><span class="icon-paper-plane"></span></div>
+	              <input type="text" class="form-control" placeholder="Enter Email Address">
+	            </div>
+	          </form>
+					</div>
+
+	        <div class="footer">
+	        	<p><!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. -->
+						  Copyright &copy;<script>document.write(new Date().getFullYear());</script> All rights reserved | This template is made with <i class="icon-heart" aria-hidden="true"></i> by <a href="https://colorlib.com" target="_blank">Colorlib.com</a>
+						  <!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. --></p>
+	        </div>
+
+	      </div>
+    	</nav>
+
+        <!-- Page Content  -->
+      <div id="content" class="p-4 p-md-5 pt-5">
+        {% block content %}
+
+        {% endblock %} 
+    </div>
+		</div>
+        
+    <!-- <script src="{% static 'index/js/jquery.min.js' %}"></script> -->
+    <script src="{% static 'index/js/popper.js' %}"></script>
+    <script src="{% static 'index/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'index/js/main.js' %}"></script>
+
+	<script>
+		urls = document.getElementsByClassName('url')
+		url_li = document.getElementsByClassName('url_li')
+
+		for(var i = 0; i < url_li.length; i++) {
+			url_li[i].classList.remove('active')
+		}
+
+		for (var i = 0; i < urls.length; i++) {
+			if(window.location.href == urls[i].href) {
+				url_li[i].className += ' active'
+			}
+		}
+	</script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.bundle.min.js" integrity="sha384-b5kHyXgcpbZJO/tY9Ul7kGkf1S0CWuKcCD38l8YkeH8z8QjE0GmW1gYU5S9FOnJ0" crossorigin="anonymous"></script>
+    </body>
+</html>

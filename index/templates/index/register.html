@@ -1,0 +1,61 @@
+{% extends 'index/base.html' %}
+{% block title %}Register{% endblock %}
+{% block content %}
+
+
+
+<div class="container loginForm">
+  <div class="">
+		<h1>Create Account</h1>
+		<form action='' method='POST'>
+            {% for e in err %}
+			    <span class="alert alert-danger">{{ e }}</span>
+			{% endfor %} 
+        {% csrf_token %}
+		  <div class="form-group has-feedback">
+			 <label class="form-label" for="">Username</label>
+		    <!-- <input type="email" class="form-control form-input" id="" placeholder="" required> -->
+            {{form.username}}
+			 <span class="glyphicon form-control-feedback"></span>
+		  </div>
+		  <div class="form-group has-feedback">
+			 <label class="form-label" for="">Password</label>
+		    <!-- <input type="password" class="form-control form-input" id="" placeholder="" required> -->
+            {{form.password1}}
+			 <span class="glyphicon form-control-feedback"></span>
+		  </div>
+		  <div class="form-group has-feedback">
+			 <label class="form-label" for="">Re-enter password</label>
+		    <!-- <input type="password" class="form-control form-input" id="" placeholder="" required> -->
+            {{form.password2}}
+			 <span class="glyphicon form-control-feedback"></span>
+		  </div>
+		<button id="submit" type="submit" class="btn btn-primary mt-2" value="Register">Register</button>
+		</form>
+		
+		<div class="form-inline">
+			<div class="form-group pull-right">
+				<label id="" class="loginPwReset">
+					<p>Already have an account ?<a href="{% url 'index:login' %}">Login</a></p>
+				</label>
+			</div>
+		</div>
+  </div>
+</div>
+
+<script>
+    var form_fields = document.getElementsByTagName('input')
+	// form_fields[1].placeholder = 'First Name..';
+	// form_fields[2].placeholder = 'Last Name..';
+	// form_fields[3].placeholder = 'Username..';
+	// form_fields[4].placeholder = 'Email..';
+	// form_fields[5].placeholder = 'Enter password...';
+	// form_fields[6].placeholder = 'Re-enter Password...';
+
+
+	for (var field in form_fields) {
+		form_fields[field].className += ' form-control form-input'
+	}
+</script>
+
+{% endblock %} 

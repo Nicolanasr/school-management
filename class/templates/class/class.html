@@ -1,0 +1,104 @@
+{% extends 'index/base.html' %}
+{% load humanize %}
+{% block title %}Index{% endblock %}
+{% block content %}
+
+
+
+<nav>
+    <div class="nav nav-tabs" id="nav-tab" role="tablist">
+        <button class="nav-link active" id="nav-home-tab" data-bs-toggle="tab" data-bs-target="#nav-home" type="button"
+            role="tab" aria-controls="nav-home" aria-selected="true">Class info</button>
+        <button class="nav-link" id="nav-profile-tab" data-bs-toggle="tab" data-bs-target="#nav-profile" type="button"
+            role="tab" aria-controls="nav-profile" aria-selected="false">Class materials</button>
+        <button class="nav-link" id="nav-contact-tab" data-bs-toggle="tab" data-bs-target="#nav-contact" type="button"
+            role="tab" aria-controls="nav-contact" aria-selected="false">Class Assignments</button>
+        <button class="nav-link" id="nav-comment-tab" data-bs-toggle="tab" data-bs-target="#nav-comment" type="button"
+            role="tab" aria-controls="nav-comment" aria-selected="false">Class Comments</button>
+    </div>
+</nav>
+<div class="tab-content" id="nav-tabContent">
+    <div class="tab-pane fade show active" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab">
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item mt-3 pl-0">Class name: {{ className }}</li>
+            <p>
+                <li class="list-group-item pl-0">Class teacher: {{ className.teacher }}</li>
+                <p>
+        </ul>
+    </div>
+    <div class="tab-pane fade" id="nav-profile" role="tabpanel" aria-labelledby="nav-profile-tab">
+        <div class="accordion accordion-flush" id="accordionFlushExample">
+        {% if is_teacher %}
+        <div class="w-100">
+            <a href={% url 'class:add_new_mat' %} class="d-flex   btn btn-info my-2 justify-content-end" style="float: right;">add new material</a>
+        </div>
+        {% endif %}
+        {% if not chap_mod %}
+            No course material Yet
+        {% endif %}
+            {% for cm in chap_mod.items %}
+                <div class="accordion-item">
+                <h2 class="accordion-header" id="flush-headingOne">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#flush-collapse{{forloop.counter}}" aria-expanded="false" aria-controls="flush-collapse{{forloop.counter}}">
+                         {{ cm.0.name }} <!-- chapter -->
+                    </button>
+                </h2>
+                <div id="flush-collapse{{forloop.counter}}" class="accordion-collapse collapse bg-light" aria-labelledby="flush-headingOne"
+                    data-bs-parent="#accordionFlushExample">
+                    <div class="accordion-body">
+                        <ul class="list-group list-group-flush">
+                        {% if cm.0.description != None %}
+                        <p> {{ cm.0.description }} </p>
+                        {% endif %}
+                        <div class="accordion" id="accordionExample">
+                        {% for m in cm.1 %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingThree">
+                                <button class="accordion-button collapsed pl-0" style="font-size: 15px;" type="button" data-bs-toggle="collapse" data-bs-target="#collapsemod{{ forloop.counter }}" aria-expanded="false" aria-controls="collapsemod{{ forloop.counter }}">
+                                    {{ m.name }} <!-- module -->
+                                </button>
+                                </h2>
+                                <div id="collapsemod{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#accordionExample">
+                                <div class="accordion-body">
+                                    {% if m.description != None %}
+                                    <p>{{ m.description }}</p>
+                                    {% endif %}
+                                    <ul>
+                                    {% for file in m.files_set.all %}
+                                       
+                                        <li> <a href="{{file.url}}" target='_blank'>{{file.file_name }}</a> - {{ file.date_added|naturaltime }}</li>
+                                    {% endfor %}
+                                    
+                                    </ul>
+                                </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                            </div>
+                            
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="tab-pane fade" id="nav-comment" role="tabpanel" aria-labelledby="nav-comment-tab">
+        <p class='mt-3'>Please use the following structure in order for your teacher to answer your question correctly:</p>
+        <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">Class</li>
+            <li class="breadcrumb-item">Chapter</li>
+            <li class="breadcrumb-item">Module</li>
+            <li class="breadcrumb-item">File link (if possible): </li>
+            Your question
+        </ol>
+        </nav>
+    </div>
+    <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">Assignemt</div>
+</div>
+
+
+
+{% endblock %}

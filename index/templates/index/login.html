@@ -1,0 +1,43 @@
+{% extends 'index/base.html' %}
+{% block title %}Login{% endblock %}
+{% block content %}
+
+
+
+<div class="container loginForm">
+  <div class="">
+		<h1>Login</h1>
+		<form method='POST' action=''>
+		{% csrf_token %}
+		  <div class="form-group has-feedback">
+			 <label class="form-label" for="">username</label>
+		    <input type="text" name="username" class="form-control form-input" id="" placeholder="" required>
+			 <span class="glyphicon form-control-feedback"></span>
+		  </div>
+		  <div class="form-group has-feedback">
+			 <label class="form-label" for="">password</label>
+		    <input type="password" name="password" class="form-control form-input" id="" placeholder="" required>
+			 <span class="glyphicon form-control-feedback"></span>
+		  </div>
+		<button id="submit" type="submit" class="btn btn-primary mt-2" value="Login">Login</button>
+		</form>
+		<div class="form-inline">
+			<div class="form-group pull-right">
+				<label id="" class="loginPwReset">
+					<a href="#">Forgot Password ?</a>
+				</label>
+			</div>
+		</div>
+		<div class="form-inline">
+			<div class="form-group pull-right">
+				<label id="" class="loginPwReset">
+					<p>Don't have an account yet ?<a href="{% url 'index:register' %}">Register</a></p>
+				</label>
+			</div>
+		</div>
+  </div>
+</div>
+
+
+
+{% endblock %} 
