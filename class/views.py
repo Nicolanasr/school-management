@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http.response import HttpResponse
 from django.shortcuts import redirect, render
-from .models import Student, Class, Teacher, Grade, ClassMaterials, ClassMaterialsChapter, ClassMaterialsModule, Files
+from .models import Comments, Student, Class, Teacher, Grade, ClassMaterials, ClassMaterialsChapter, ClassMaterialsModule, Files
 import json
 from django.http import HttpResponse
 
@@ -33,8 +33,28 @@ def class_info(request, class_name):
         # for c in chap_mod:
         #     for m in chap_mod[c]:
         #         print(m.files_set.all())
+
+        comments = Comments.objects.filter(class_name=className, parent=None)
+        if request.method == 'POST':
+            parent_obj = None
+            new_comment = request.POST.get('new_comment')
+            try:
+                parent_id = request.POST.get('parent_id')
+            except:
+                parent_id = None
+
+            if parent_id:
+                parent_qs = Comments.objects.get(id=parent_id)
+                if parent_qs:
+                    print(parent_qs)
+                    parent_obj = parent_qs
+
+            print('parent_id', parent_id)
+            new_c = Comments(author=request.user, text=new_comment, class_name=className, parent=parent_obj)
+            new_c.save()
+            return redirect('class:class_info', class_name)
                 
-        ctx = {'className': className, 'chap_mod': chap_mod, 'is_teacher':is_teacher}
+        ctx = {'className': className, 'chap_mod': chap_mod, 'is_teacher':is_teacher, 'comments': comments}
     except Class.DoesNotExist:
         ctx = {}
         print('class Does not exist')

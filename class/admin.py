@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Student, Teacher, Class, Grade, ClassMaterials, ClassMaterialsChapter, Files, ClassMaterialsModule
+from .models import Student, Teacher, Class, Grade, ClassMaterials, ClassMaterialsChapter, Files, ClassMaterialsModule, Comments
 
 # Register your models here.
 
@@ -11,3 +11,4 @@ admin.site.register(ClassMaterials)
 admin.site.register(ClassMaterialsChapter)
 admin.site.register(ClassMaterialsModule)
 admin.site.register(Files)
+admin.site.register(Comments)

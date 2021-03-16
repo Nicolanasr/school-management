@@ -14,7 +14,7 @@
         <button class="nav-link" id="nav-contact-tab" data-bs-toggle="tab" data-bs-target="#nav-contact" type="button"
             role="tab" aria-controls="nav-contact" aria-selected="false">Class Assignments</button>
         <button class="nav-link" id="nav-comment-tab" data-bs-toggle="tab" data-bs-target="#nav-comment" type="button"
-            role="tab" aria-controls="nav-comment" aria-selected="false">Class Comments</button>
+            role="tab" aria-controls="nav-comment" aria-selected="false">Class Comments ({{comments.count}})</button>
     </div>
 </nav>
 <div class="tab-content" id="nav-tabContent">
@@ -28,55 +28,64 @@
     </div>
     <div class="tab-pane fade" id="nav-profile" role="tabpanel" aria-labelledby="nav-profile-tab">
         <div class="accordion accordion-flush" id="accordionFlushExample">
-        {% if is_teacher %}
-        <div class="w-100">
-            <a href={% url 'class:add_new_mat' %} class="d-flex   btn btn-info my-2 justify-content-end" style="float: right;">add new material</a>
-        </div>
-        {% endif %}
-        {% if not chap_mod %}
+            {% if is_teacher %}
+            <div class="w-100">
+                <a href={% url 'class:add_new_mat' %} class="d-flex   btn btn-info my-2 justify-content-end"
+                    style="float: right;">add new material</a>
+            </div>
+            {% endif %}
+            {% if not chap_mod %}
             No course material Yet
-        {% endif %}
+            {% endif %}
             {% for cm in chap_mod.items %}
-                <div class="accordion-item">
+            <div class="accordion-item">
                 <h2 class="accordion-header" id="flush-headingOne">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#flush-collapse{{forloop.counter}}" aria-expanded="false" aria-controls="flush-collapse{{forloop.counter}}">
-                         {{ cm.0.name }} <!-- chapter -->
+                        data-bs-target="#flush-collapse{{forloop.counter}}" aria-expanded="false"
+                        aria-controls="flush-collapse{{forloop.counter}}">
+                        {{ cm.0.name }}
+                        <!-- chapter -->
                     </button>
                 </h2>
-                <div id="flush-collapse{{forloop.counter}}" class="accordion-collapse collapse bg-light" aria-labelledby="flush-headingOne"
-                    data-bs-parent="#accordionFlushExample">
+                <div id="flush-collapse{{forloop.counter}}" class="accordion-collapse collapse bg-light"
+                    aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
                     <div class="accordion-body">
                         <ul class="list-group list-group-flush">
-                        {% if cm.0.description != None %}
-                        <p> {{ cm.0.description }} </p>
-                        {% endif %}
-                        <div class="accordion" id="accordionExample">
-                        {% for m in cm.1 %}
-                            <div class="accordion-item">
-                                <h2 class="accordion-header" id="headingThree">
-                                <button class="accordion-button collapsed pl-0" style="font-size: 15px;" type="button" data-bs-toggle="collapse" data-bs-target="#collapsemod{{ forloop.counter }}" aria-expanded="false" aria-controls="collapsemod{{ forloop.counter }}">
-                                    {{ m.name }} <!-- module -->
-                                </button>
-                                </h2>
-                                <div id="collapsemod{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#accordionExample">
-                                <div class="accordion-body">
-                                    {% if m.description != None %}
-                                    <p>{{ m.description }}</p>
-                                    {% endif %}
-                                    <ul>
-                                    {% for file in m.files_set.all %}
-                                       
-                                        <li> <a href="{{file.url}}" target='_blank'>{{file.file_name }}</a> - {{ file.date_added|naturaltime }}</li>
-                                    {% endfor %}
-                                    
-                                    </ul>
+                            {% if cm.0.description != None %}
+                            <p> {{ cm.0.description }} </p>
+                            {% endif %}
+                            <div class="accordion" id="accordionExample">
+                                {% for m in cm.1 %}
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="headingThree">
+                                        <button class="accordion-button collapsed pl-0" style="font-size: 15px;"
+                                            type="button" data-bs-toggle="collapse"
+                                            data-bs-target="#collapsemod{{ forloop.counter }}" aria-expanded="false"
+                                            aria-controls="collapsemod{{ forloop.counter }}">
+                                            {{ m.name }}
+                                            <!-- module -->
+                                        </button>
+                                    </h2>
+                                    <div id="collapsemod{{ forloop.counter }}" class="accordion-collapse collapse"
+                                        aria-labelledby="headingThree" data-bs-parent="#accordionExample">
+                                        <div class="accordion-body">
+                                            {% if m.description != None %}
+                                            <p>{{ m.description }}</p>
+                                            {% endif %}
+                                            <ul>
+                                                {% for file in m.files_set.all %}
+
+                                                <li> <a href="{{file.url}}" target='_blank'>{{file.file_name }}</a> -
+                                                    {{ file.date_added|naturaltime }}</li>
+                                                {% endfor %}
+
+                                            </ul>
+                                        </div>
+                                    </div>
                                 </div>
-                                </div>
+                                {% endfor %}
                             </div>
-                        {% endfor %}
-                            </div>
-                            
+
                         </ul>
                     </div>
                 </div>
@@ -85,20 +94,117 @@
         </div>
     </div>
     <div class="tab-pane fade" id="nav-comment" role="tabpanel" aria-labelledby="nav-comment-tab">
-        <p class='mt-3'>Please use the following structure in order for your teacher to answer your question correctly:</p>
+        <p class='mt-3'>Please use the following structure in order for your teacher to answer your question correctly:
+        </p>
         <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item">Class</li>
-            <li class="breadcrumb-item">Chapter</li>
-            <li class="breadcrumb-item">Module</li>
-            <li class="breadcrumb-item">File link (if possible): </li>
-            Your question
-        </ol>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">Class</li>
+                <li class="breadcrumb-item">Chapter</li>
+                <li class="breadcrumb-item">Module</li>
+                <li class="breadcrumb-item">File link (if possible): </li>
+                Your question
+            </ol>
+
         </nav>
+        <div id="class_comments">
+            <form action="" method='POST' id="add_new_comment">
+                {% csrf_token %}
+                <label for="new_comment:">Add new commet</label>
+                <textarea name="new_comment" id="new_comment" class="w-100 form-control"
+                    placeholder="Leave a comment here" style="height: 100px !important"></textarea>
+                <button class='btn btn-primary mt-2'>Post</button>
+            </form>
+
+            {% for comment in comments %}
+            <div class="card p-md-3 mb-2 p-sm-1 p-0 pt-3" style="max-width: 100%;">
+                <div class="">
+                    <div class="d-flex flex-column ms-2">
+                        <div class="mb-1 text-primary d-flex justify-content-between">
+                            <h6 class="">{{ comment.author }}</h6>
+                            <!-- {% if request.user == comment.user %}
+                            <form action="{% url 'dashboard:deleteComment'  task.id comment.id %}" class="">
+                              <button type="submit" class="btn p-x-2 pt-0 pb-0 text-danger "><i class="far fa-trash-alt"></i></button> 
+                            </form>
+                            {% endif %} -->
+                        </div>
+                        <p class="comment-text">{{ comment.text|linebreaks  }}</p>
+                        <div class="d-flex flex-row justify-content-end"> <span
+                                class="text-muted fw-normal fs-10">{{ comment.date_added|naturaltime }}</span>
+
+                        </div>
+                        <hr>
+                        <form action="" method='POST' id="">
+                            {% csrf_token %}
+                            <label for="">Replies ({{ comment.children.count }}) 
+                                {% if comment.children.count > 0 %}
+                                | <a href="#" class="replies-btn" style="font-size: 13px;">Show replies</a>
+                                {% endif %}
+                            </label>
+                            <div class="row align-items-center w-100 m-0 p-2">
+                                <textarea name="new_comment" id="" class="w-100 form-control col-sm"
+                                    placeholder="Leave a reply here"></textarea>
+                                <button
+                                    class='btn btn-primary mt-1 col-sm-2 col-md-2 col-lg-1 mt-sm-0 ml-sm-4'>Reply</button>
+                            </div>
+                            <input type="hidden" name="parent_id" value="{{ comment.id }}">
+                        </form>
+                        <div class="replies-divs" style="display: none;">
+                            {% for reply in comment.children %}
+                            <div class="card p-md-3 mb-2 p-sm-1 p-0 pt-3" style="max-width: 100%;">
+                                <div class="">
+                                    <div class="d-flex flex-column ms-2">
+                                        <div class="mb-1 text-primary d-flex justify-content-between">
+                                            <h6 class="">{{ reply.author }}</h6>
+                                            <!-- {% if request.user == comment.user %}
+                                        <form action="{% url 'dashboard:deleteComment'  task.id comment.id %}" class="">
+                                          <button type="submit" class="btn p-x-2 pt-0 pb-0 text-danger "><i class="far fa-trash-alt"></i></button> 
+                                        </form>
+                                        {% endif %} -->
+                                        </div>
+                                        <p class="comment-text">{{ reply.text|linebreaks  }}</p>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <div class="d-flex flex-row gap-3 align-items-center">
+                                        <!-- <div class="d-flex align-items-center"> <i class="fa fa-heart-o"></i> <span class="ms-1 fs-10">Like</span> </div>
+                                    <div class="d-flex align-items-center"> <i class="fa fa-comment-o"></i> <span class="ms-1 fs-10">Comments</span> </div> -->
+                                    </div>
+                                    <div class="d-flex flex-row"> <span
+                                            class="text-muted fw-normal fs-10">{{ reply.date_added|naturaltime }}</span>
+
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <div class="d-flex flex-row gap-3 align-items-center">
+                        <!-- <div class="d-flex align-items-center"> <i class="fa fa-heart-o"></i> <span class="ms-1 fs-10">Like</span> </div>
+                        <div class="d-flex align-items-center"> <i class="fa fa-comment-o"></i> <span class="ms-1 fs-10">Comments</span> </div> -->
+                    </div>
+
+                </div>
+            </div>
+
+            {% endfor %}
+        </div>
     </div>
     <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">Assignemt</div>
 </div>
 
+<script>
+    $(".replies-btn").click(function(e) {
+        if($(this).text() == 'Show replies'){
+           $(this).text('Hide replies');
+       } else {
+           $(this).text('Show replies');
+       }
+        e.preventDefault()
+        $(this).parent().parent().next(".replies-divs").fadeToggle()
+    })
+</script>
 
 
 {% endblock %}
