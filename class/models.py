@@ -113,14 +113,14 @@ class Comments(models.Model):
 
 
 # assign each created user as a student
-def create_user(sender, instance, created, **kwargs):
-    if created:
-        user = User.objects.get(username=instance)
-        grp = Group.objects.get(name='Students')
-        student = Student(user=user)
-        student.save()
-        student = Student.objects.get(user=user)
-        grp.user_set.add(user)
+# def create_user(sender, instance, created, **kwargs):
+#     if created:
+#         user = User.objects.get(username=instance)
+#         grp = Group.objects.get(name='Students')
+#         student = Student(user=user)
+#         student.save()
+#         student = Student.objects.get(user=user)
+#         grp.user_set.add(user)
 
 
-post_save.connect(create_user, sender=User)
+# post_save.connect(create_user, sender=User)
