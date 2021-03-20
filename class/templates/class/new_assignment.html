@@ -1,0 +1,80 @@
+{% extends 'index/base.html' %}
+{% load humanize %}
+{% block title %}Add assignemnt{% endblock %}
+{% block content %}
+
+<style>
+    .inp:focus {
+        outline: none;
+        box-shadow:0 0 0 1px lightblue;
+    }
+</style>
+
+
+<form method='POST' action=''>
+{% csrf_token %}
+    <h4>Add new Assingment</h4>
+  <div class="mb-3">
+    <label for="title" class="form-label">Title</label>
+    <input type="text" class="form-control" name="title" id="title" required>
+  </div>
+  <div class="mb-3">
+    <label for="description" class="form-label">Description</label>
+    <textarea type="text" class="form-control" id="description" name="description" style="resize:vertical !important; height: 200px !important;" required></textarea>
+  </div>
+  <div class="mb-3" id="noted">
+    <label for="noted" class="form-label">Noted?</label> <br>
+    <input type="radio" id="true" name="noted" value='True' required> <label for="true">Yes</label>
+    <input type="radio" id="false" name="noted" value='False' required> <label for="false">No</label>
+  </div>
+  <div class="mb-3 d-none" id="points">
+    <label for="pointsval" class="form-label">Points</label>
+    <input class="inp pl-1" name="points" type="number" id="pointsval" style="border: 1px solid #ced4da; border-radius: 3px;">
+  </div>
+  <div class="mb-3">
+    <label for="date" class="form-label">Due Date</label>
+    <input type="date" class="form-control" id="date" name='due_date' style="width: 200px;" required >
+  </div>
+  <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+
+<script>
+    radios = document.getElementsByName('noted')
+    $('#noted').change(function() {
+        for (var i = 0, length = radios.length; i < length; i++) {
+            if (radios[i].checked) {
+                // do whatever you want with the checked radio
+                if(radios[i].value == 'True') {
+                    $('#points').removeClass('d-none');
+                    $('#pointsval').attr('required',true);
+                } else {
+                    $('#points').addClass('d-none');
+                    $('#pointsval').attr('required',false);
+                }
+        
+                // only one radio can be logically checked, don't check the rest
+                break;
+            }
+        }
+    })
+    var today = new Date();
+    var dd = today.getDate();
+    var mm = today.getMonth()+1;
+    var yyyy = today.getFullYear();
+    if(dd<10){
+            dd='0'+dd
+        } 
+        if(mm<10){
+            mm='0'+mm
+        } 
+
+    today = yyyy+'-'+mm+'-'+dd;
+    document.getElementById("date").setAttribute("min", today);
+</script>
+
+
+
+
+
+
+{% endblock %}

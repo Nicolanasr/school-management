@@ -24,21 +24,83 @@
       <li class="list-group-item pl-0 border-1"> <a href="{% url 'class:class_info' class.name %}">{{ class }}</a> </li>
       <div class='border-1'> </div>
       {% endfor %}
+      {% if is_teacher %}
+<div class="w-100">
+  <a href={% url 'class:add_new_mat' %} class="d-flex   btn btn-info my-2 justify-content-start"
+    style="float: left;">Add
+    new material</a>
+</div>
+{% endif %}
+      
+      <p class="mt-5">Schedule: </p>
+      
+      <table class="table">
+        
+        <tr>
+        {% for key, value in sched.items %}
+          <tr>
+            <th>{{key}}</th>
+            {% for val in value %}
+            <td>
+              {% for ke, v in val.items %}
+              {{ke}}: {{v}}
+              {% endfor %}
+            </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </table>
+      
+      <!-- <p></p>
+        
+      {% for key, value in sched.items %}
+      {{key}}:
+      <br>
+      {% for val in value %}
+
+      {% for ke, v in val.items %}
+      -{{ke}}: {{v}}
+      <br>
+      {% endfor %}
+      {% endfor %}
+      <br>
+
+      {% endfor %} -->
     </ul>
   </div>
   <div class="tab-pane fade" id="pills-profile" role="tabpanel" aria-labelledby="pills-profile-tab">
     Congrats you have no assignments yet
   </div>
   <div class="tab-pane fade" id="pills-contact" role="tabpanel" aria-labelledby="pills-contact-tab">
-    Contact your teachers here
+
+    <table class="table">
+    <caption style="caption-side: top">Contact your teachers</caption>
+    <thead>
+      <tr>
+        <th scope="col">Class</th>
+        <th scope="col">Teacher</th>
+        <th scope="col">E-mail</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for class in classes %} 
+      <tr>
+        <td>{{class}}</td>
+      {% if class.teacher.email  == 'noemail@email.com' %}
+        <td>{{class.teacher}}</td>
+        <td>(Cannot contact the teacher directly try wrinting your question in your class comments)</td>
+      {% else %}
+        <td><a href="mailto:{{class.teacher.email}}">{{class.teacher}}</td>
+        <td>{{class.teacher.email}}</td>
+      {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+    
   </div>
 </div>
 
-{% if is_teacher %}
-<div class="w-100">
-  <a href={% url 'class:add_new_mat' %} class="d-flex   btn btn-info my-2 justify-content-start" style="float: left;">Add
-    new material</a>
-</div>
-{% endif %}
+
 
 {% endblock %}

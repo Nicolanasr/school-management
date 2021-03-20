@@ -1,16 +1,56 @@
+from os import name
+import os
+from django.conf import settings
 from django import http
 from django.http import JsonResponse
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.http.response import HttpResponse
+from django.http import response
+from django.http.response import Http404, HttpResponse
 from django.shortcuts import redirect, render
-from .models import Comments, Student, Class, Teacher, Grade, ClassMaterials, ClassMaterialsChapter, ClassMaterialsModule, Files
+from .models import Assignment, Comments, Student, Class, Teacher, Grade, ClassMaterials, ClassMaterialsChapter, ClassMaterialsModule, Files, Times, SubmittedAssignments
 import json
 from django.http import HttpResponse
+import datetime 
 
 def index(request):
     if request.user.is_authenticated:
-        return render(request, 'class/index.html')
+        time = ''
+        try:
+            us = Student.objects.get(user=request.user)
+            classes = us.className.all()
+        except:
+            us = Teacher.objects.get(user=request.user)
+            classes = us.class_set.all()
+        dai = []
+        sched = {}
+        # for days in Times.get_all_days():
+        #     for cl in classes:
+        #         if len(cl.times_set.filter(day=days[0])) > 0:
+        #             if days[0] not in dai:
+        #                 # print(days[0], ': ')
+        #                 dai.append(days[0])
+        #                 sched[days[0]] = [{cl.name: cl.times_set.filter(day=days[0])[0].time}]
+        #             else:
+        #                 sched[days[0]].append({cl.name: cl.times_set.filter(day=days[0])[0].time})
+        #                 pass
+        for days in Times.get_all_days():
+            times = Times.objects.filter(day=days[0])
+            for time in times:
+                if us == time.class_name.teacher or us in time.class_name.student_set.all():
+                    print(days[0], time.class_name, time.time)
+                    if days[0] not in dai:
+                        dai.append(days[0])
+                        sched[days[0]] = [{time.class_name: time.time}]
+                    else:
+                        sched[days[0]].append({time.class_name: time.time})
+                        pass
+        print(sched)
+        for s in sched:
+            print(s, sched[s])
+            # for time in cl.times_set.all():
+            #     print('class: ', time.class_name, 'day: ', time.day, 'time: ', time.time)
+        return render(request, 'class/index.html', {'days': dai, 'sched': sched, 'classes': classes})
     else:
         return redirect('index:login')
 
@@ -22,6 +62,18 @@ def class_info(request, class_name):
     ctx = {}
     try:
         className = Class.objects.get(name = class_name)
+        class_assignments = Assignment.objects.filter(class_name=className)
+        status_list = []
+        for cl in class_assignments:
+            try:
+                stat = cl.submittedassignments_set.get(submitted_by=request.user)
+                status_list.append(stat.status)
+            except:
+                if cl.due_date < datetime.date.today():
+                    status_list.append('missed')
+                else:
+                    status_list.append('awaiting submission')
+
         chapters = ClassMaterialsChapter.objects.filter(className = className).order_by('-date_added')
         chap_mod = {}
         for chapter in chapters:
@@ -54,7 +106,7 @@ def class_info(request, class_name):
             new_c.save()
             return redirect('class:class_info', class_name)
                 
-        ctx = {'className': className, 'chap_mod': chap_mod, 'is_teacher':is_teacher, 'comments': comments}
+        ctx = {'className': className, 'chap_mod': chap_mod, 'is_teacher':is_teacher, 'comments': comments, 'class_assignments': class_assignments, 'status_list': status_list}
     except Class.DoesNotExist:
         ctx = {}
         print('class Does not exist')
@@ -65,7 +117,7 @@ def add_new_mat(request):
         teacher = Teacher.objects.get(user=request.user)
         classes = Class.objects.filter(teacher=teacher)
         ctx= {'classes': classes}
-        return render(request, 'class/dependant_test.html', ctx)
+        return render(request, 'class/add_new_material.html', ctx)
     except:
         return redirect('class:index')
 
@@ -82,8 +134,10 @@ def getdetails(request):
             module = ClassMaterialsModule.objects.get(id=module_id)
             files = Files(ClassMaterialsModule=module, file_name=title, url=url)
             files.save()
+            cl = Class.objects.get(id=class_id)
+            print('saving')
             messages.success(request, "New material added successfully!")
-            return redirect('class:add_new_mat')
+            return redirect('class:class_info', cl)
 
         class_name = request.POST.get('class')
         data['class_name'] = class_name
@@ -159,6 +213,84 @@ def new_module(request):
     else:
         return redirect('class:add_new_mat')
         
+def class_assignment(request, class_name, class_assignment_id):
+    # if request.method == 'POST':
+
+    assignment = Assignment.objects.get(id=class_assignment_id)
+    try:
+        submitted = SubmittedAssignments.objects.get(assignment=assignment, submitted_by=request.user)
+        stat = submitted.status
+        grade = submitted.grade
+    except:
+        stat = 'awaiting submission'
+        grade = ''
+    ass_class = assignment.class_name
+    try:
+        student = Student.objects.get(user=request.user)
+        cl = student.className.all()
+        for c in cl:
+            if class_name in c.name:
+                student_class = True
+    except:
+        student_class = False
+        pass
+    if ass_class.teacher.user == request.user or student_class:
+        if request.method == 'POST':
+            file_posted = request.FILES.get('file')
+            print(request.FILES.get('file'))
+            file = SubmittedAssignments(submitted_by=request.user, assignment=assignment, files=file_posted, status='submitted')
+            file.save()
+            return redirect('class:class_info', class_name)
+    else:
+        return redirect('class:index')
+    ctx = {'assignment': assignment, 'status': stat, 'grade': grade, 'class_name': class_name}
+    return render(request, 'class/assignment.html', ctx)
+
+def new_assignment(request, class_name):
+    try: 
+        Class.objects.get(name=class_name)
+    except:
+        return redirect('class:index')
+    if request.method == 'POST':
+        class_name = Class.objects.get(name=class_name)
+        title = request.POST.get('title')
+        description = request.POST.get('description')
+        noted = request.POST.get('noted')
+        points = request.POST.get('points')
+        if points == '':
+            points = None
+        due_date = request.POST.get('due_date')
+        assignment = Assignment(title=title, description=description, noted=noted, points=points, class_name=class_name, due_date=due_date)
+        assignment.save()
+        return redirect('class:class_info', class_name.name)
+    return render(request, 'class/new_assignment.html')
+
+def submitted_assignment(request, class_name, assignment):
+    try: 
+        class_name = Class.objects.get(name=class_name)
+    except:
+        return redirect('class:index')
+    if request.user.groups.filter(name='Teachers').exists():
+        if request.method == 'POST':
+            ass = Assignment.objects.get(id=assignment)
+            points = request.POST.get('points')
+            submitted_id = request.POST.get('submitted_id')
+            if int(points) > ass.points:
+                print('you cant do that')
+            else:
+                print(points)
+                SubmittedAssignments.objects.select_for_update().filter(id=submitted_id).update(
+                    grade=points, status='graded'
+                )
+
+        assignment = Assignment.objects.filter(id=assignment)
+        for a in assignment[0].submittedassignments_set.all():
+            print(a.files)
+        ctx = {'assignment': assignment}
+        return render(request, 'class/submitted_assignments.html', ctx)
+    else:
+        return redirect('class:class_info', class_name)
+
 
 
 # def new_for_class(request):

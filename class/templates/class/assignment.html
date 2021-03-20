@@ -1,0 +1,41 @@
+{% extends 'index/base.html' %}
+{% load humanize %}
+{% block title %}{{ assignment.title }}{% endblock %}
+{% block content %}
+
+
+<div class='container'>
+    {% if assignment.noted %}
+    <p class='d-flex justify-content-end fs-5'>Grade: {{grade}}/{{assignment.points}}</p>
+    {% else %}
+    <p class='d-flex justify-content-end fs-5'>Not graded</p>
+    {% endif %}
+    <div class='row justify-content-between align-items-center'>
+        <h2 class='col-sm'>{{assignment.title}} <span class='fs-6 fw-light'>|{{assignment.class_name}}</span> </h2>
+        <p class='col-sm m-sm-0  d-sm-flex justify-content-end'>Due Date: {{assignment.due_date}}</p>
+    </div>
+    <hr>
+    <div>
+        <p class='fs-5 border-bottom' style='max-width: 130px;'>Descripiton: </p>
+        {{assignment.description}}
+    </div>
+    <hr>
+    {% if status != 'awaiting submission' %}
+        You have already submitted your work for further info please contact your teacher
+    {% else %}
+        <form action="" method='POST' class="mt-5" enctype ="multipart/form-data">
+            {% csrf_token %}
+            <label for="formFile" class="form-label mb-0">Upload your work:</label>
+            <div class="form-text mb-2">Note: this action cannot be undone or modified</div>
+            <div class="form-text mb-2">Only one file can be uploaded so if your project contains multiple files make sure to compress it into a .zip file </div>
+            <input class="form-control" type="file" id="formFile" name='file' required>
+            <button class="btn btn-primary mt-2" type="submit">Submit</button>
+        </form>
+    {% endif %} <br><br>
+    {% if is_teacher %}
+        <a href="{% url 'class:submitted_assignment' class_name assignment.id%}" class="btn btn-primary text-white">View submitted assignments</a>
+    {% endif %}
+</div>
+
+
+{% endblock %}

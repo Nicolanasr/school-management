@@ -7,10 +7,11 @@
 <div class="container loginForm">
   <div class="">
 		<h1>Create Account</h1>
+		<ul class='p-0' style="list-style: none;">
+		{% for e in err %}
+			<li class="alert alert-danger">{{ e }}</li>
+		{% endfor %} </ul>
 		<form action='' method='POST'>
-            {% for e in err %}
-			    <span class="alert alert-danger">{{ e }}</span>
-			{% endfor %} 
         {% csrf_token %}
 		  <div class="form-group has-feedback">
 			 <label class="form-label" for="">Username</label>

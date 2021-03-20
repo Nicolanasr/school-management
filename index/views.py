@@ -29,8 +29,8 @@ def registerPage(request):
             else:
                 err = form.errors.values()
                 err = list(err)
-                ctx = {'form': form, 'err': err}
                 print(err)
+                ctx = {'form': form, 'err': err}
 
         return render(request, 'index/register.html', ctx)
 
@@ -48,8 +48,9 @@ def loginPage(request):
                 return redirect('class:index')
                 # return redirect('index:index')
             else:
-                print('nono')
-                messages.warning(request, 'Username or Password are incorrect')
+                print('Username or Password are incorrect')
+                messages.error(request, 'Username or Password are incorrect')
+                return render(request, 'index/login.html')
 
         return render(request, 'index/login.html')
 

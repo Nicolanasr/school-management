@@ -1,0 +1,68 @@
+{% extends 'index/base.html' %}
+{% load custom_tags %}
+{% load humanize %}
+{% block title %}Submitted assignments{% endblock %}
+{% block content %}
+
+<style>
+    .inp:focus {
+        outline: none;
+        box-shadow:0 0 0 1px lightblue;
+    }
+</style>
+
+<h4>{{assignment.0.title}} Submissions so far:</h4>
+
+<table class="table">
+    <tr>
+        <th>Submitted by</th>
+        <th>Graded?</th>
+        <th>Grade</th>
+        <th>Download file</th>
+        <th>Status</th>
+    </tr>
+    {% for sub in assignment.0.submittedassignments_set.all %}
+    <tr>
+        <td>{{sub.submitted_by}}</td>
+        <td>{{sub.assignment.noted}}</td>
+        {% if sub.grade|stringformat:"s"  == 'None' and sub.assignment.noted%}
+        <td><button type="button" class="btn p-0" data-bs-toggle="modal"
+                data-bs-target="#staticBackdrop{{forloop.counter}}">
+                <span style="color: #007bff;">Grade</span>
+            </button></td>
+        {% else %}
+        <td>{{sub.grade}}</td>
+        {% endif %}
+        <td><a href="{{ sub.files.url }}" download="{{ sub.files.url }}">download</a></td>
+        <td>{{ sub.status }}</td>
+    </tr>
+    <div class="modal fade" id="staticBackdrop{{forloop.counter}}" data-bs-backdrop="static" data-bs-keyboard="false"
+        tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel">Grading {{ sub.submitted_by }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="" method='POST'>
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <label for="pointsval">Grade /{{ sub.assignment.points }}:</label>
+                        <input class="inp pl-1" name="points" type="number" id="pointsval" min="1" max="{{ sub.assignment.points }}" style="border: 1px solid #ced4da; border-radius: 3px;" required>
+                        <input type="hidden" name="submitted_id" value="{{sub.id}}">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</table>
+
+
+
+
+{% endblock %}

@@ -1,22 +1,43 @@
 {% extends 'index/base.html' %}
+{% load custom_tags %}
 {% load humanize %}
 {% block title %}Index{% endblock %}
 {% block content %}
 
 
-
-<nav>
-    <div class="nav nav-tabs" id="nav-tab" role="tablist">
-        <button class="nav-link active" id="nav-home-tab" data-bs-toggle="tab" data-bs-target="#nav-home" type="button"
-            role="tab" aria-controls="nav-home" aria-selected="true">Class info</button>
-        <button class="nav-link" id="nav-profile-tab" data-bs-toggle="tab" data-bs-target="#nav-profile" type="button"
-            role="tab" aria-controls="nav-profile" aria-selected="false">Class materials</button>
-        <button class="nav-link" id="nav-contact-tab" data-bs-toggle="tab" data-bs-target="#nav-contact" type="button"
-            role="tab" aria-controls="nav-contact" aria-selected="false">Class Assignments</button>
-        <button class="nav-link" id="nav-comment-tab" data-bs-toggle="tab" data-bs-target="#nav-comment" type="button"
-            role="tab" aria-controls="nav-comment" aria-selected="false">Class Comments ({{comments.count}})</button>
+<!-- <nav>
+    <div class="nav nav-tabs" id="myTab" role="tablist">
+        <a href="#" class="nav-link active" id="nav-home-tab" data-bs-toggle="tab" data-bs-target="#nav-home" type="button"
+        role="tab" aria-controls="nav-home" aria-selected="true">Class info</a>
+        <a href="#" class="nav-link" id="nav-profile-tab" data-bs-toggle="tab" data-bs-target="#nav-profile" type="button"
+        role="tab" aria-controls="nav-profile" aria-selected="false">Class materials</a>
+        <a href="#" class="nav-link" id="nav-contact-tab" data-bs-toggle="tab" data-bs-target="#nav-contact" type="button"
+        role="tab" aria-controls="nav-contact" aria-selected="false">Class Assignments</a>
+        <a href="#" class="nav-link" id="nav-comment-tab" data-bs-toggle="tab" data-bs-target="#nav-comment" type="button"
+        role="tab" aria-controls="nav-comment" aria-selected="false">Class Comments ({{comments.count}})</a>
     </div>
-</nav>
+</nav> -->
+
+
+
+
+
+<div class="m-3">
+    <ul class="nav nav-tabs" id="myTab">
+        <li class="nav-item">
+            <a href="#nav-home" class="nav-link active" data-toggle="tab">Class info</a>
+        </li>
+        <li class="nav-item">
+            <a href="#nav-profile" class="nav-link" data-toggle="tab">Class materials</a>
+        </li>
+        <li class="nav-item">
+            <a href="#nav-contact" class="nav-link" data-toggle="tab">Class Assignments ({{class_assignments.count}})</a>
+        </li>
+        <li class="nav-item">
+            <a href="#nav-comment" class="nav-link" data-toggle="tab">Class Comments ({{comments.count}})</a>
+        </li>
+    </ul>
+</div>
 <div class="tab-content" id="nav-tabContent">
     <div class="tab-pane fade show active" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab">
         <ul class="list-group list-group-flush">
@@ -76,7 +97,7 @@
                                                 {% for file in m.files_set.all %}
 
                                                 <li> <a href="{{file.url}}" target='_blank'>{{file.file_name }}</a> -
-                                                    {{ file.date_added|naturaltime }}</li>
+                                                    {{ file.date_added|naturalday }}</li>
                                                 {% endfor %}
 
                                             </ul>
@@ -135,7 +156,7 @@
                         <hr>
                         <form action="" method='POST' id="">
                             {% csrf_token %}
-                            <label for="">Replies ({{ comment.children.count }}) 
+                            <label for="">Replies ({{ comment.children.count }})
                                 {% if comment.children.count > 0 %}
                                 | <a href="#" class="replies-btn" style="font-size: 13px;">Show replies</a>
                                 {% endif %}
@@ -191,19 +212,55 @@
             {% endfor %}
         </div>
     </div>
-    <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">Assignemt</div>
+
+    <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">
+        {% if class_assignments.count <= 0 %}
+        Hooray no Assignments for this class
+        {% else %}
+        <table class='table'>
+            <tr>
+                <th>title</th>
+                <th>description</th>
+                <th>points</th>
+                <th>status</th>
+                <th>Due Date</th>
+            </tr>
+            {% for ass in class_assignments %}
+            <tr>
+                <td><a href="{% url 'class:class_assignment' className ass.id%}">{{ass.title}}</a></td>
+                <td>{{ass.description|truncatewords:10 }}</td>
+                <td>{{ ass.points }}</td>
+                <td>{{status_list|get_list_item:forloop.counter0 }}</td>
+                <td>{{ass.due_date}}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+    </div>
+    {% if is_teacher %}
+        <a href="{% url 'class:new_assignment' className %}" class="btn btn-primary text-white">Add new assignments</a>
+    {% endif %}
 </div>
 
 <script>
-    $(".replies-btn").click(function(e) {
-        if($(this).text() == 'Show replies'){
-           $(this).text('Hide replies');
-       } else {
-           $(this).text('Show replies');
-       }
+    $(".replies-btn").click(function (e) {
+        if ($(this).text() == 'Show replies') {
+            $(this).text('Hide replies');
+        } else {
+            $(this).text('Show replies');
+        }
         e.preventDefault()
         $(this).parent().parent().next(".replies-divs").fadeToggle()
     })
+    $(document).ready(function () {
+        $('a[data-toggle="tab"]').on('show.bs.tab', function (e) {
+            localStorage.setItem('activeTab', $(e.target).attr('href'));
+        });
+        var activeTab = localStorage.getItem('activeTab');
+        if (activeTab) {
+            $('#myTab a[href="' + activeTab + '"]').tab('show');
+        }
+    });
 </script>
 
 
