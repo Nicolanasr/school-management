@@ -28,7 +28,7 @@ SECRET_KEY = '%u8x-&6(+l1twf3zv_by*ac$z8+e(#m8ru(&v*i4na9cy9$b@0'
 DEBUG = True
 
 
-# ALLOWED_HOSTS = ['127.0.0.1', 'nicolas-school-management.herokuapp.com']
+ALLOWED_HOSTS = ['127.0.0.1', 'nicolas-school-management.herokuapp.com']
 ALLOWED_HOSTS = []
 
 
