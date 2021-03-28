@@ -28,8 +28,8 @@ SECRET_KEY = '%u8x-&6(+l1twf3zv_by*ac$z8+e(#m8ru(&v*i4na9cy9$b@0'
 DEBUG = True
 
 
-ALLOWED_HOSTS = ['nicolas-school-management.herokuapp.com']
-# ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = ['nicolas-school-management.herokuapp.com']
+ALLOWED_HOSTS = ['nicolas-school-management.herokuapp.com', '127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -135,7 +135,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Beirut'
 
 USE_I18N = True
 

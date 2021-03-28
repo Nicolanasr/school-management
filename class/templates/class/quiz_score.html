@@ -1,0 +1,35 @@
+{% extends 'index/base.html' %}
+{% load custom_tags %}
+{% load humanize %}
+{% block title %}Quiz Results{% endblock %}
+{% block content %}
+
+<p class="fs-3">Score: {{score}}/100</p>
+
+<table class="table">
+    <tr>
+        <th>Qeustion</th>
+        <th>Your answer</th>
+        <th></th>
+    </tr>
+    {%for c in answers%}
+        <tr>
+            {%if c in correct_answers_list%}
+                <td>{{c.0}}</td>
+                <td>{{c.1}}</td>
+                <td><span class="text-success">Correct</span></td>
+            {%else%}
+                <td>{{c.0}}</td>
+                <td>{{c.1}}</td>
+                <td><span class="text-danger">False</span></td>
+            {%endif%}
+        </tr>
+    {%endfor%}
+
+</table>
+
+
+
+
+
+{% endblock %}

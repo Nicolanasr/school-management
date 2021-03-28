@@ -1,9 +1,13 @@
+from datetime import datetime
 from django.db import models
 from django.contrib.auth.models import Group, User
+from django.db.models.fields.json import HasKeyLookup
+from django.db.models.fields.related import ForeignKey
 from django.db.models.signals import post_save, m2m_changed, pre_save
 from django.dispatch import receiver
 from django.http.response import Http404, HttpResponse
 # Create your models here.
+import datetime
 
 
 
@@ -14,13 +18,6 @@ class Teacher(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
     email = models.EmailField(default='noemail@email.com', null=True, blank=True)
 
-# TODO
-# class Assignement(models.Model):
-#     title = models.CharField(max_length=100)
-#     description = models.TextField
-#     due_date = models.da
-#     added_date = 
-#     grade = 
 
 class Class(models.Model):
     def __str__(self):
@@ -78,15 +75,6 @@ class Student(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
     className = models.ManyToManyField(Class, blank=True)
 
-class Grade(models.Model):
-    def __str__(self):
-        return (self.studentName, '-', self.className, ': ', self.grade)
-    
-    grade = models.IntegerField(default=0)
-    className = models.ForeignKey(Class, on_delete=models.CASCADE, blank=True, null=True)
-    studentName = models.ForeignKey(Student, on_delete=models.CASCADE, blank=True, null=True)
-     
-
 class Comments(models.Model):
     def all(self):
         qs = super(Comments, self).filter(parents=None)
@@ -113,7 +101,7 @@ class Comments(models.Model):
 
 class Times(models.Model):
     def __str__(self):
-        return (self.class_name, self.day, self.time)
+        return str(self.class_name) + ', ' + str(self.day) + ', ' + str(self.time)
     
     class Meta:
         ordering = ['-time']
@@ -173,7 +161,59 @@ class SubmittedAssignments(models.Model):
     files = models.FileField(upload_to='assignments_files/' , blank=True, null=True)
     grade = models.IntegerField(blank=True, null=True)
     status = models.CharField(max_length=100, default=stat[0], choices=stat)
+    submitted_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     
+class Quiz(models.Model):
+    def __str__(self):
+        return f"{self.title}-{self.class_name}"
+    
+    title = models.CharField(max_length=120)
+    class_name = models.ForeignKey(Class, on_delete=models.CASCADE)
+    #number_of_questions = models.IntegerField()
+    time = models.IntegerField(help_text="Quiz duration in minutes")
+    points = models.IntegerField(default=100)
+    created = models.DateTimeField(auto_now=True)
+    max_time_to_take= models.DateTimeField(help_text="The maximum date and time the users will be able to take the quiz")
+
+    def get_questions(self):
+        return self.question_set.all()
+
+class Question(models.Model):
+    def __str__(self):
+        return self.text
+
+    text = models.CharField(max_length=200)
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
+
+    def get_answers(self):
+        return self.answers_set.all()
+
+class Answers(models.Model):
+    def __str__(self):
+        return f"question: {self.question.text}, answer: {self.text}, correct: {self.correct}"
+    
+    text = models.CharField(max_length=200)
+    correct = models.BooleanField(default=False)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+
+class Results(models.Model):
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    score = models.FloatField()
+    submitted_date = models.DateTimeField(auto_now_add=True)
+
+# TODO maybe add submitted answers
+
+
+class Grade(models.Model):
+    def __str__(self):
+        return f"{self.studentName} {self.className} {self.grade}"
+    
+    grade = models.IntegerField(default=0)
+    className = models.ForeignKey(Class, on_delete=models.CASCADE, blank=True, null=True)
+    studentName = models.ForeignKey(Student, on_delete=models.CASCADE, blank=True, null=True)
+    number_of_total_grades = models.IntegerField(default=0)
+
 
 
 # Create a teacher/student model when a user is added to one of these groups

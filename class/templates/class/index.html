@@ -1,16 +1,20 @@
 {% extends 'index/base.html' %}
 {% block title %}Index{% endblock %}
+{% load custom_tags %}
 {% block content %}
 
 <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
   <li class="nav-item" role="presentation">
-    <button class="nav-link active" id="pills-home-tab" data-bs-toggle="pill" data-bs-target="#pills-home" type="button"
-      role="tab" aria-controls="pills-home" aria-selected="true">Classes</button>
+    <button class="nav-link active" id="pills-classes-tab" data-bs-toggle="pill" data-bs-target="#pills-classes" type="button"
+      role="tab" aria-controls="pills-classes" aria-selected="true">Classes</button>
   </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="pills-profile-tab" data-bs-toggle="pill" data-bs-target="#pills-profile" type="button"
-      role="tab" aria-controls="pills-profile" aria-selected="false">Assignments</button>
-  </li>
+  {% if grades != 'not_student' %}
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="pills-grades-tab" data-bs-toggle="pill" data-bs-target="#pills-grades" type="button"
+        role="tab" aria-controls="pills-grades" aria-selected="false">Grades</button>
+    </li>
+  
+  {% endif %}
   <li class="nav-item" role="presentation">
     <button class="nav-link" id="pills-contact-tab" data-bs-toggle="pill" data-bs-target="#pills-contact" type="button"
       role="tab" aria-controls="pills-contact" aria-selected="false">Contact</button>
@@ -18,7 +22,7 @@
 </ul>
 
 <div class="tab-content" id="pills-tabContent">
-  <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
+  <div class="tab-pane fade show active" id="pills-classes" role="tabpanel" aria-labelledby="pills-classes-tab">
     <ul class="list-group list-group-flush">
       {% for class in classes %}
       <li class="list-group-item pl-0 border-1"> <a href="{% url 'class:class_info' class.name %}">{{ class }}</a> </li>
@@ -50,26 +54,30 @@
           </tr>
         {% endfor %}
       </table>
-      
-      <!-- <p></p>
-        
-      {% for key, value in sched.items %}
-      {{key}}:
-      <br>
-      {% for val in value %}
-
-      {% for ke, v in val.items %}
-      -{{ke}}: {{v}}
-      <br>
-      {% endfor %}
-      {% endfor %}
-      <br>
-
-      {% endfor %} -->
+    
     </ul>
   </div>
-  <div class="tab-pane fade" id="pills-profile" role="tabpanel" aria-labelledby="pills-profile-tab">
-    Congrats you have no assignments yet
+  <div class="tab-pane fade" id="pills-grades" role="tabpanel" aria-labelledby="pills-grades-tab">
+    {% if grades != 'not_student' and grades != None %}
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>Class</th>
+          <th>Grade</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for grade in grades %}
+        <tr class='clickable-row' data-href="{% url 'class:class_grades' grade.className.name%}" style="cursor: pointer;">
+          <td>{{ grade.className}}</td>
+          <td>{{ gr_int|get_list_item:forloop.counter0 }}/100</td>
+        </tr>
+      {%endfor%}
+      </tbody>
+    </table>
+    {% else %}
+      No grades yet for this user
+    {% endif %}
   </div>
   <div class="tab-pane fade" id="pills-contact" role="tabpanel" aria-labelledby="pills-contact-tab">
 
@@ -101,6 +109,15 @@
   </div>
 </div>
 
+
+
+<script>
+  jQuery(document).ready(function($) {
+    $(".clickable-row").click(function() {
+        window.location = $(this).data("href");
+    });
+});
+</script>
 
 
 {% endblock %}

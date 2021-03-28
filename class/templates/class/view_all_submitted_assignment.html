@@ -1,0 +1,28 @@
+{% extends 'index/base.html' %}
+{% load custom_tags %}
+{% load humanize %}
+{% block title %}Assignments{% endblock %}
+{% block content %}
+
+<h3>All assignments for {{ class_name.name }}</h3>
+<br>
+<table class="table">
+    <tr>
+        <th>Title</th>
+        <th>Points</th>
+        <th>Due Date</th>
+        <th>Submitted</th>
+    </tr>
+    {% for ass in all_ass %}
+        <tr>
+            <td><a href="{% url 'class:view_submitted_assignment' class_name ass.id%}">{{ass.title}}</a></td>
+            <td>{{ass.points}}</td>
+            <td>{{ass.due_date}}</td>
+            <td>{{ass.submittedassignments_set.all.count}}</td>
+        </tr>
+    {% endfor %}
+
+</table>
+
+
+{% endblock %}

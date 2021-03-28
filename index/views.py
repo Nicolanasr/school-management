@@ -4,6 +4,7 @@ from django.shortcuts import render, redirect
 from .forms import SignUpForm
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
+from django.contrib.auth.models import User
 
 # Create your views here.
 
@@ -21,6 +22,15 @@ def registerPage(request):
             if form.is_valid():
                 username = request.POST.get('username')
                 password = request.POST.get('password1')
+                username_f = form.cleaned_data['username']
+                brk = True
+                try:
+                    User.objects.get(username__iexact=username)
+                except:
+                    brk = False
+                if brk:
+                    messages.warning(request, 'Username already in use')
+                    return redirect('index:register')
                 form.save()
                 user = authenticate(request, username=username, password=password)
                 if user is not None:
@@ -41,8 +51,14 @@ def loginPage(request):
         if request.method == 'POST':
             username = request.POST.get('username')
             password = request.POST.get('password')
+            try:
+                user = User.objects.get(username__iexact=username)
+            except User.DoesNotExist:
+                messages.error(request, 'Username or Password are incorrect')
+                return render(request, 'index/login.html')
 
-            user = authenticate(request, username=username, password=password)
+
+            user = authenticate(request, username=user, password=password)
             if user is not None:
                 login(request, user)
                 return redirect('class:index')

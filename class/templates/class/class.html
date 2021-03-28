@@ -25,16 +25,19 @@
 <div class="m-3">
     <ul class="nav nav-tabs" id="myTab">
         <li class="nav-item">
-            <a href="#nav-home" class="nav-link active" data-toggle="tab">Class info</a>
+            <a href="#nav-home" class="nav-link active" data-toggle="tab">info</a>
         </li>
         <li class="nav-item">
-            <a href="#nav-profile" class="nav-link" data-toggle="tab">Class materials</a>
+            <a href="#nav-profile" class="nav-link" data-toggle="tab">materials</a>
         </li>
         <li class="nav-item">
-            <a href="#nav-contact" class="nav-link" data-toggle="tab">Class Assignments ({{class_assignments.count}})</a>
+            <a href="#nav-contact" class="nav-link" data-toggle="tab">Assignments ({{class_assignments.count}})</a>
         </li>
         <li class="nav-item">
-            <a href="#nav-comment" class="nav-link" data-toggle="tab">Class Comments ({{comments.count}})</a>
+            <a href="#nav-quiz" class="nav-link" data-toggle="tab">Quizes</a>
+        </li>
+        <li class="nav-item">
+            <a href="#nav-comment" class="nav-link" data-toggle="tab">Comments ({{comments.count}})</a>
         </li>
     </ul>
 </div>
@@ -214,6 +217,7 @@
     </div>
 
     <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">
+        
         {% if class_assignments.count <= 0 %}
         Hooray no Assignments for this class
         {% else %}
@@ -227,8 +231,13 @@
             </tr>
             {% for ass in class_assignments %}
             <tr>
+                {% if status_list|get_list_item:forloop.counter0 == 'missed' %}
+                    <td>{{ass.title}}</td>
+                {% else %}
                 <td><a href="{% url 'class:class_assignment' className ass.id%}">{{ass.title}}</a></td>
-                <td>{{ass.description|truncatewords:10 }}</td>
+
+                {% endif %}
+                <td>{{ass.description|truncatechars:100 }}</td>
                 <td>{{ ass.points }}</td>
                 <td>{{status_list|get_list_item:forloop.counter0 }}</td>
                 <td>{{ass.due_date}}</td>
@@ -236,11 +245,81 @@
             {% endfor %}
         </table>
         {% endif %}
+        {% if is_teacher %}
+        <div class="w-100">
+            <a href="{% url 'class:new_assignment' className %}" class="d-flex btn btn-primary text-white my-2 justify-content-end"
+            style="float: right;">Add new assignment</a>
+        </div>
+        <div class="w-100">
+            <a href="{% url 'class:view_all_submitted_assignment' className %}" class="d-flex btn btn-primary text-white m-2 justify-content-end"
+                style="float: right;">View submitted Assignments</a>
+        </div>
+        {% endif %}
     </div>
-    {% if is_teacher %}
-        <a href="{% url 'class:new_assignment' className %}" class="btn btn-primary text-white">Add new assignments</a>
+    <div class="tab-pane fade" id="nav-quiz" role="tabpanel" aria-labelledby="nav-quiz-tab">
+    {% if quizes.count < 1 %}
+        Quizes will show here
+    {% else %}
+        <table class='table'>
+            <tr>
+                <th>Title</th>
+                <th>Duration</th>
+                <th>Points</th>
+                <th>Max Time to take</th>
+                <th>Number of questions</th>
+            </tr>
+            {% for quiz in quizes %}
+                <tr>
+                    <td>
+                        <button type="button" class="btn text-primary p-0" data-bs-toggle="modal" data-bs-target="#staticBackdrop{{ forloop.counter }}">
+                            {{ quiz.title }}
+                        </button>
+                    </td>
+                    <td>{{ quiz.time }} min</td>
+                    <td>{{ quiz.points }}</td>
+                    <td>{{ quiz.max_time_to_take }}</td>
+                    <td>{{ quiz.get_questions.count }}</td>
+                </tr>
+                <div class="modal fade" id="staticBackdrop{{ forloop.counter }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="staticBackdropLabel">Take {{ quiz.title }}</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                          You are about to take <span class="fw-bold">{{ quiz.title }}</span>, be aware that you can't retake or cancel this test once you decide to continue, if you don't feel ready feel free 
+                          to click close and take it before <span class="fw-bold">{{ quiz.max_time_to_take }}</span>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                          <button type="button" class="btn btn-primary"><a href="{% url 'class:quiz' className quiz.id %}" class="text-white">Understood</a></button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+            {%endfor%}
+
+        </table>
     {% endif %}
+    {% if is_teacher %}
+    <div class="w-100">
+        <a href="{% url 'class:new_quiz' className %}" class="d-flex btn btn-primary text-white my-2 justify-content-end"
+            style="float: right;">Add new Quiz</a>
+    </div>
+    <div class="w-100 ">
+        <a href="{% url 'class:submitted_quizes' className %}" class="d-flex btn btn-primary text-white my-2 mx-2 justify-content-end"
+            style="float: right;">View submitted Quizes</a>
+    </div>
+    {% endif %}
+    </div>
+    
 </div>
+
+
+
+
+
 
 <script>
     $(".replies-btn").click(function (e) {

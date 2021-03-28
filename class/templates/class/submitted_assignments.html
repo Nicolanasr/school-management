@@ -33,7 +33,12 @@
         {% else %}
         <td>{{sub.grade}}</td>
         {% endif %}
-        <td><a href="{{ sub.files.url }}" download="{{ sub.files.url }}">download</a></td>
+        
+        {% if sub.files.url != None %}
+            <td><a href="{{ sub.files.url }}" download="{{ sub.files.url }}">download</a></td>
+        {% else %}
+            <td>No file was attached with this submission this issue means that the student has missed the due date of the assignment</td>
+        {% endif %}
         <td>{{ sub.status }}</td>
     </tr>
     <div class="modal fade" id="staticBackdrop{{forloop.counter}}" data-bs-backdrop="static" data-bs-keyboard="false"

@@ -1,0 +1,30 @@
+{% extends 'index/base.html' %}
+{% load custom_tags %}
+{% load humanize %}
+{% block title %}Submitted quizes{% endblock %}
+{% block content %}
+
+<h3>Quizes submitted</h3> <br>
+<table class='table'>
+    <tr>
+        <th>Title</th>
+        <th>Max Time to take</th>
+        <th>Number of submissions</th>
+    </tr>
+    {% for quiz in class_quizes %}
+        <tr>
+            <td>
+                <a href="{% url 'class:view_submitted_quiz' class_name quiz.id%}">{{quiz.title}}</a>
+            </td>
+            <td>{{ quiz.max_time_to_take }}</td>
+            <td>{{ quiz.results_set.all.count }}</td>
+        </tr>
+    {%endfor%}
+
+</table>
+
+
+
+
+
+{% endblock %}

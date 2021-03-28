@@ -1,0 +1,194 @@
+{% extends 'index/base.html' %}
+{% load custom_tags %}
+{% load humanize %}
+{% block title %}Add new Quiz{% endblock %}
+{% block content %}
+
+
+
+<style>
+    .inp:focus {
+        outline: none;
+        box-shadow:0 0 0 1px lightblue;
+    }
+</style>
+
+
+<form method='POST' action='' id="quiz" class="">
+{% csrf_token %}
+    <h4>Add new Quiz to {{class_name}}</h4>
+  <div class="mb-3">
+    <label for="title" class="form-label">Title</label>
+    <input type="text" class="form-control" name="title" id="title" placeholder="Quiz title" required>
+  </div>
+  <!-- <div class="mb-3">
+    <label for="class" class="form-label">Class</label>
+    <select class="form-select" id="class" name="class" aria-label="Default select example" required>
+        <option value="" selected>Select a class</option>
+        {% for class in all_classes %}
+            <option value="class.id">{{class}}</option>
+        {% endfor %}
+      </select>
+  </div> -->
+  <div class="mb-3">
+    <label for="duration" class="form-label">Duration</label> <br>
+    <input type="number" class="form-control" id="duration" name="duration" placeholder="Quiz duration in minutes" required>
+  </div>
+  <div class="mb-3">
+    <label for="to_pass" class="form-label">Points</label>
+    <input class="form-control" name="to_pass" type="number" min="1" max="100" id="to_pass" placeholder="Quiz points" required>
+  </div>
+  <div class="mb-3">
+    <label for="max_date" class="form-label mb-0">Maximum submission date</label>
+    <div id="" class="form-text mt-0 mb-1">Students will be required to take the test before the specified date</div>
+    <input type="date" class="form-control" id="max_date" name='max_date' required >
+  </div>
+  <div class="mb-3">
+    <label for="max_time" class="form-label mb-0">Maximum submission Time</label>
+    <input type="time" class="form-control" id="max_time" name='max_time' required>
+  </div>
+  <button type="submit" class="btn btn-primary">Save and add questions</button>
+</form>
+
+
+<!-- class="d-none" -->
+<form action="" method="POST" id="question" class="d-none">
+    {% csrf_token %}
+    <h4>Add Questions</h4>
+    <div class="mb-3">
+        <label for="question" class="form-label">Question:</label>
+        <input type="text" class="form-control" name="question" id="question" placeholder="Question title" required>
+        
+        <div id="choices">
+            <h6 class="mt-2">Add choices</h6>
+            <label for="choices_num">How many choices this question have?</label>
+            <input type="number" class="form-control mb-3" min="1" max="10" id="choices_num" style="width: 100px;" required>
+            <div id="added_choices">
+                <div id="choices_added">
+
+                </div>
+            </div>
+        </div>
+        <!-- <input type="text" class="form-control"> -->
+        
+
+        <button type="submit" class="btn btn-primary mt-3">Add</button>
+    </div>
+    <!-- <a href="">+ Add another question</a> -->
+</form>
+
+<script>
+    $("#choices_num").change(function(e) {
+        $("#choices_added").remove()
+        $("#added_choices").append("<div id='choices_added'></div>")
+
+        
+        if(1<=$("#choices_num").val() && $("#choices_num").val()<=10){
+            for(i=1; i<=$("#choices_num").val(); i++) {
+                    $("#choices_added").append(
+                        "<label  class='form-label'>Choice " + i + ":</label>" + 
+                        "<input type='text' name='choice" + i + "' class='form-control choice' required>" +
+                        "<label class='mr-2'>correct</label> " + 
+                        "<input type='radio' name='correct" + i + "' value='True' required> " +
+                        "<label class='mr-2'>not correct</label>" + 
+                        "<input type='radio' name='correct" + i + "' value='False' required> <br>" 
+                        )
+                }
+        }
+    })
+
+    $('#quiz').submit(function(e) {
+        e.preventDefault()
+        
+        var title =($("#title")).val()
+        // var class_name =($("#class")).val()
+        var duration =($("#duration")).val()
+        var to_pass =($("#to_pass")).val()
+        var max_date =($("#max_date")).val()
+        var max_time =($("#max_time")).val()
+        let csrf = document.getElementsByName('csrfmiddlewaretoken')[0].value;
+
+        url = "{% url 'class:new_quiz' class_name%}"
+        const fd = new FormData()
+        fd.append('csrfmiddlewaretoken', csrf)
+        fd.append('title', title)
+        // fd.append('class_name', class_name)
+        fd.append('duration', duration)
+        fd.append('to_pass', to_pass)
+        fd.append('max_date', max_date)
+        fd.append('max_time', max_time)
+        $.ajax({
+            type: 'POST',
+            url: url,
+            data: fd,
+            cache: false,
+            processData: false,
+            contentType: false,
+            success: function (success) {
+                $('#quiz').addClass(' d-none')
+                $('#question').removeClass('d-none')
+                console.log(success)
+                $('#quiz').append("<input type='number' name='quiz_id' value="+success['quiz_id']+" hidden>")
+                success['quiz_id']
+            },
+            fail: function (error) {
+                console.log(error)
+            },
+        })
+
+    })
+    
+    $("#question").submit(function(e) {
+        e.preventDefault()
+        let csrf = document.getElementsByName('csrfmiddlewaretoken')[0].value;
+        question = document.getElementsByName('question')[0].value
+        quiz_id = document.getElementsByName('quiz_id')[0].value
+
+        
+        url = "{% url 'class:new_quiz' class_name%}"
+        const fd = new FormData()
+        fd.append('csrfmiddlewaretoken', csrf)
+        fd.append('question', question)
+        fd.append('quiz_id', quiz_id)
+        // fd.append('choices_len', i-1)
+        for(j=0; j < $(".choice").length; j++) {
+            fd.append((($(".choice")[j]).name), (($(".choice")[j]).value))
+            fd.append((($(".choice")[j]).name) + "_correct" , $("input:radio[name=correct" + (j + 1) + "]:checked").val())
+        }
+        $.ajax({
+            type: 'POST',
+            url: url,
+            data: fd,
+            cache: false,
+            processData: false,
+            contentType: false,
+            success: function (success) {
+                console.log(success)
+                $('#question')[0].reset();
+                $("#choices_added").remove()
+            },
+            fail: function (error) {
+                console.log(error)
+            },
+        })
+    })
+
+    var today = new Date();
+    var dd = today.getDate();
+    var mm = today.getMonth()+1;
+    var yyyy = today.getFullYear();
+    if(dd<10){
+            dd='0'+dd
+        } 
+        if(mm<10){
+            mm='0'+mm
+        } 
+
+    today = yyyy+'-'+mm+'-'+dd;
+    document.getElementById("max_date").setAttribute("min", today);
+
+</script>
+
+
+
+{% endblock %}

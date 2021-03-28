@@ -1,0 +1,70 @@
+{% extends 'index/base.html' %}
+{% load custom_tags %}
+{% load humanize %}
+{% block title %}Quiz{% endblock %}
+{% block content %}
+
+
+<div class="container">
+    <div class="row">
+        <div class='col'>
+            <div>
+                <h3>{{quiz.title}}<span class='fs-6 fw-light'>|{{quiz.class_name}}</span></h3>
+            </div>
+            <div>Score you need to pass: {{quiz.points}}%</div>
+            <div class="form-text">Thid is how the score is calculated: if you get three questions right and two wrong it will count as +3-2 = 1 point <br>
+                So check only the answers that you are certain are true checking additional boxes will result in losing points
+            </div>
+        </div>
+        <div class="d-flex justify-content-end col align-self-center">Time left: <span class="px-1" id="time_left_contain"></span> min</div>
+    </div>
+    <hr>
+    <form action="" method="POST" id="quiz_form">
+        {% csrf_token %}
+        {% for question in quiz.get_questions %}
+            <div>
+                <h5>Question: {{question}} </h5>
+                <div class="ml-3">
+                    {% for answers in question.get_answers %}
+                        <input type="checkbox" id="choice_{{ forloop.counter }}{{ forloop.parentloop.counter }}" name="question{{ question.id }}_choice{{ answers.id }}" value="{{ answers.id }}">
+                        <label for="choice_{{ forloop.counter }}{{ forloop.parentloop.counter }}">{{ answers.text }}</label> <br>
+                    {%endfor%}
+                </div>
+            </div>
+        {%endfor%}
+        <button class="btn btn-primary mt-5">Submit</button>
+    </form>
+</div>
+
+
+<script>
+    function startTimer(duration, view_date) {
+        var countdown = duration, minutes, seconds;
+        setInterval(function () {
+            minutes = parseInt(countdown / 60, 10);
+            seconds = parseInt(countdown % 60, 10);
+            minutes = minutes < 10 ? "0" + minutes : minutes;
+            seconds = seconds < 10 ? "0" + seconds : seconds;
+            view_date.textContent = minutes + ":" + seconds;
+            if (--countdown < 0) {
+                countdown = duration;
+            }
+            if(minutes=='00' && seconds == '00') {
+                console.log('STOP!!!!')
+                alert('You ran out of time the test will auto submit!')
+                quiz_form = document.getElementById('quiz_form').submit()
+            }
+        }, 1000);
+    }
+    window.onload = function () {
+        time_left_contain = document.getElementById('time_left_contain')
+
+        var minutesOfFive = 60 * "{{quiz.time}}",
+            view_date = document.querySelector('#time_left_contain');
+        startTimer(minutesOfFive, view_date);
+    };
+    
+</script>
+
+
+{% endblock %}

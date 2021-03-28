@@ -8,10 +8,12 @@ from django.contrib import messages
 from django.http import response
 from django.http.response import Http404, HttpResponse
 from django.shortcuts import redirect, render
-from .models import Assignment, Comments, Student, Class, Teacher, Grade, ClassMaterials, ClassMaterialsChapter, ClassMaterialsModule, Files, Times, SubmittedAssignments
+from .models import Assignment, Comments, Results, Student, Class, Teacher, Grade, ClassMaterials, ClassMaterialsChapter, ClassMaterialsModule, Files, Times, SubmittedAssignments, Quiz, Answers, Question
 import json
 from django.http import HttpResponse
-import datetime 
+from datetime import datetime, timezone, timedelta
+import datetime
+import re
 
 def index(request):
     if request.user.is_authenticated:
@@ -45,12 +47,31 @@ def index(request):
                     else:
                         sched[days[0]].append({time.class_name: time.time})
                         pass
-        print(sched)
-        for s in sched:
-            print(s, sched[s])
-            # for time in cl.times_set.all():
-            #     print('class: ', time.class_name, 'day: ', time.day, 'time: ', time.time)
-        return render(request, 'class/index.html', {'days': dai, 'sched': sched, 'classes': classes})
+        # print(sched)
+        # for s in sched:
+        #     print(s, sched[s])
+        #     # for time in cl.times_set.all():
+        #     #     print('class: ', time.class_name, 'day: ', time.day, 'time: ', time.time)
+        grades = []
+        gr_int = []
+        if(request.user.groups.filter(name='Students').exists()):
+            for class_name in classes:
+                try:
+                    grade = Grade.objects.get(studentName=us, className=class_name)
+                    grades.append(grade)
+                    gr_int.append(round((grade.grade/grade.number_of_total_grades)*100, 2))
+                except:
+                    pass
+        elif (request.user.groups.filter(name='Teachers').exists()):
+            grades = 'not_student'
+            print('You are not a student')
+        if len(grades) == 0:
+            grades = None
+
+        print(grades)
+            
+        ctx = {'days': dai, 'sched': sched, 'classes': classes, 'grades': grades, 'gr_int': gr_int}
+        return render(request, 'class/index.html', ctx)
     else:
         return redirect('index:login')
 
@@ -61,7 +82,25 @@ def class_info(request, class_name):
         is_teacher = False
     ctx = {}
     try:
-        className = Class.objects.get(name = class_name)
+        try:
+            className = Class.objects.get(name=class_name)
+        except Class.DoesNotExist:
+            print('Class Does not exist')
+            return redirect('class:index')
+        try:
+            student = Student.objects.get(user=request.user)
+            cl = student.className.all()
+            for c in cl:
+                if class_name in c.name:
+                    student_class = True
+        except:
+            student_class = False
+            pass
+        if className.teacher.user == request.user or student_class:
+            pass
+        else:
+            print('you do not have access')
+            return redirect('class:index')
         class_assignments = Assignment.objects.filter(class_name=className)
         status_list = []
         for cl in class_assignments:
@@ -85,6 +124,50 @@ def class_info(request, class_name):
         # for c in chap_mod:
         #     for m in chap_mod[c]:
         #         print(m.files_set.all())
+        quizes = Quiz.objects.filter(class_name=className)
+        quizes_list = []
+        # print(Student.objects.filter(className=className))
+        for quiz in quizes:
+            timezone_offset = + 2.0 
+            tzinfo = timezone(timedelta(hours=timezone_offset))
+            if quiz.max_time_to_take > datetime.datetime.now(tzinfo) and len(quiz.results_set.filter(user=request.user)) == 0:
+                quizes_list.append(quiz)
+            for student in Student.objects.filter(className=className):
+                if quiz.max_time_to_take < datetime.datetime.now(tzinfo) and len(quiz.results_set.filter(user=student.user)) == 0 :
+                    Results(user=student.user, quiz=quiz, score=0).save()
+                    number_of_total_grades = int(quiz.points)
+                    gr = 0
+                    try:
+                        grade = Grade.objects.get(className=className, studentName=student)
+                        number_of_total_grades = grade.number_of_total_grades + int(quiz.points)
+                        gr = grade.grade + 0
+                    except Grade.DoesNotExist:
+                        grade = Grade(className=className, studentName=student)
+                        grade.save()
+                        print(grade.studentName)
+                    Grade.objects.select_for_update().filter(className=className, studentName=student).update(number_of_total_grades=number_of_total_grades, grade=gr)
+        
+        assignments = Assignment.objects.filter(class_name=className)
+        assignments_list = []
+        # print(Student.objects.filter(className=className))
+        date_now = datetime.date(datetime.datetime.now().year, datetime.datetime.now().month, datetime.datetime.now().day)
+        for assignment in assignments:
+            for student in Student.objects.filter(className=className):
+                if assignment.due_date < date_now and len(SubmittedAssignments.objects.filter(assignment=assignment, submitted_by=student.user)) == 0 and assignment.noted:
+                    SubmittedAssignments(assignment=assignment, submitted_by=student.user, grade=0, status="graded").save()
+                    number_of_total_grades = int(assignment.points)
+                    gr = 0
+                    try:
+                        grade = Grade.objects.get(className=className, studentName=student)
+                        number_of_total_grades = grade.number_of_total_grades + int(assignment.points)
+                        gr = grade.grade + 0
+                    except Grade.DoesNotExist:
+                        grade = Grade(className=className, studentName=student)
+                        grade.save()
+                        print(grade.studentName)
+                    Grade.objects.select_for_update().filter(className=className, studentName=student).update(number_of_total_grades=number_of_total_grades, grade=gr)
+
+
 
         comments = Comments.objects.filter(class_name=className, parent=None)
         if request.method == 'POST':
@@ -106,7 +189,7 @@ def class_info(request, class_name):
             new_c.save()
             return redirect('class:class_info', class_name)
                 
-        ctx = {'className': className, 'chap_mod': chap_mod, 'is_teacher':is_teacher, 'comments': comments, 'class_assignments': class_assignments, 'status_list': status_list}
+        ctx = {'className': className, 'chap_mod': chap_mod, 'is_teacher':is_teacher, 'comments': comments, 'class_assignments': class_assignments, 'status_list': status_list, 'quizes': quizes_list}
     except Class.DoesNotExist:
         ctx = {}
         print('class Does not exist')
@@ -134,7 +217,11 @@ def getdetails(request):
             module = ClassMaterialsModule.objects.get(id=module_id)
             files = Files(ClassMaterialsModule=module, file_name=title, url=url)
             files.save()
-            cl = Class.objects.get(id=class_id)
+            try:
+                cl = Class.objects.get(id=class_id)
+            except Class.DoesNotExist:
+                print('Class Does not exist')
+                return redirect('class:index')
             print('saving')
             messages.success(request, "New material added successfully!")
             return redirect('class:class_info', cl)
@@ -173,7 +260,11 @@ def new_chapter(request):
         class_name = request.POST.get('class_id_for_new_chapter')
         new_chapter = request.POST.get('new_chapter')
         new_chapter_desc = request.POST.get('new_chapter_desc')
-        class_name = Class.objects.get(id=class_name)
+        try:
+            class_name = Class.objects.get(name=class_name)
+        except Class.DoesNotExist:
+            print('Class Does not exist')
+            return redirect('class:index')
         if class_name.classmaterialschapter_set.filter(name=new_chapter):
             messages.warning(request, "Chapter name: \'" + str(new_chapter) + "\' already exists in this class")
             return redirect('class:add_new_mat')
@@ -265,7 +356,22 @@ def new_assignment(request, class_name):
         return redirect('class:class_info', class_name.name)
     return render(request, 'class/new_assignment.html')
 
-def submitted_assignment(request, class_name, assignment):
+def view_all_submitted_assignment(request, class_name):
+    try:
+        cl = Class.objects.get(name=class_name)
+    except Class.DoesNotExist:
+        print('Class does not exist')
+        return redirect('class:index')
+        
+    if request.user.groups.filter(name='Teachers').exists() and cl.teacher.user == request.user:
+        all_ass = Assignment.objects.filter(class_name=cl)
+        ctx = {'all_ass': all_ass, 'class_name': cl}
+        return render(request, 'class/view_all_submitted_assignment.html', ctx)
+    else:
+        print('You do not have access')
+        return redirect('class:class_info', class_name)
+
+def view_submitted_assignment(request, class_name, assignment):
     try: 
         class_name = Class.objects.get(name=class_name)
     except:
@@ -282,14 +388,316 @@ def submitted_assignment(request, class_name, assignment):
                 SubmittedAssignments.objects.select_for_update().filter(id=submitted_id).update(
                     grade=points, status='graded'
                 )
+                submitted_by = SubmittedAssignments.objects.get(id=submitted_id).submitted_by
+                try: 
+                    student = Student.objects.get(user=submitted_by)
+                except Student.DoesNotExist:
+                    print('student does not exist')
+                    return redirect('class:view_submitted_assignment', class_name, assignment)
+                number_of_total_grades = ass.points
+                gr = int(points)
+                try:
+                    grade = Grade.objects.get(className=class_name, studentName=student)
+                    number_of_total_grades = grade.number_of_total_grades + ass.points
+                    gr = grade.grade + int(points)
+                except Grade.DoesNotExist:
+                    grade = Grade(className=class_name, studentName=student)
+                    grade.save()
+                Grade.objects.select_for_update().filter(className=class_name, studentName=student).update(number_of_total_grades=number_of_total_grades, grade=gr)
 
         assignment = Assignment.objects.filter(id=assignment)
-        for a in assignment[0].submittedassignments_set.all():
-            print(a.files)
+        
         ctx = {'assignment': assignment}
         return render(request, 'class/submitted_assignments.html', ctx)
     else:
         return redirect('class:class_info', class_name)
+
+def new_quiz(request, class_name):
+    data = {}
+    if request.user.groups.filter(name='Teachers').exists():
+        #* to remove
+        # teacher = Teacher.objects.get(user=request.user)
+        # all_classes = Class.objects.filter(teacher=teacher)
+
+        # if request.method == 'POST':
+        #     for key, value in request.POST.items():
+        #         print('%s' % (value) )
+        
+        if request.is_ajax() and request.POST.get('question') is not None:
+            print('Question: ', request.POST.get('question'))
+            print('quiz_id: ', request.POST.get('quiz_id'))
+            quiz_id = request.POST.get('quiz_id')
+            quiz = Quiz.objects.get(id=quiz_id)
+            quest = Question(text=request.POST.get('question'), quiz=quiz)
+            quest.save()
+            list = []
+            for key, value in request.POST.items():
+                if 'choice' in str(key):
+                    list.append(value)
+            i = 0
+            while i < len(list):
+                ans = Answers(text=list[i:i+2][0], correct=list[i:i+2][1], question=quest)
+                ans.save()
+                i = i + 2
+            print(list)
+
+        if request.is_ajax() and request.POST.get('question') is None:
+            title = request.POST.get('title')
+            duration = request.POST.get('duration')
+            to_pass = request.POST.get('to_pass')
+            max_date = request.POST.get('max_date')
+            max_time = request.POST.get('max_time')
+            data['title'] = title
+            data['duration'] = duration
+            data['to_pass'] = to_pass
+            data['max_date'] = max_date
+            data['max_time'] = max_time
+            date_time_str = max_date + ' ' + max_time + ':00'
+            print(date_time_str)
+            date_time = datetime.datetime.strptime(date_time_str, '%Y-%m-%d %H:%M:%S')
+            try:
+                class_object = Class.objects.get(name=class_name)
+            except Class.DoesNotExist:
+                print('Class Does not exist')
+                return redirect('class:index')
+            quiz = Quiz(title=title, class_name=class_object, time=duration, points=to_pass, max_time_to_take=date_time)
+            quiz.save()
+            quiz = Quiz.objects.get(id=quiz.id)
+            data['quiz_id'] = quiz.id
+            print(data)
+            return JsonResponse(data, safe=False)
+
+        ctx = {'class_name': class_name}
+        return render(request, 'class/new_quiz.html', ctx)
+    else:
+        return redirect('class:class_info', class_name)
+
+def quiz(request, class_name, quiz_id):
+    try:
+        quiz = Quiz.objects.get(id=quiz_id)
+    except Quiz.DoesNotExist:
+        print('quiz Does not exist')
+        return redirect('class:class_info', class_name)
+    
+
+    
+    quiz_class = quiz.class_name
+    student_class = False
+    try:
+        student = Student.objects.get(user=request.user)
+        cl = student.className.all()
+        for c in cl:
+            if class_name in c.name:
+                student_class = True
+                break
+    except:
+        student_class = False
+        pass
+    if quiz_class.teacher.user == request.user or student_class:
+        # print(len(quiz.get_questions()))
+        if request.method == 'POST':
+            answers_list = []
+            correct_answers_list = []
+            questions_answered_list = []
+            total_ans_count = 0
+            for quest in quiz.get_questions():
+                total_ans_count += len(quest.answers_set.filter(correct=True))
+                ans = Answers.objects.filter(question=quest, correct=True)
+                for x in range(len(ans)):
+                    correct_answers_list.append([ans[x].question.text, ans[x].text])
+            # print(total_ans_count)
+            correct_count = 0
+            for key, value in request.POST.items():
+                if key != 'csrfmiddlewaretoken':
+                    reg = key.split('_')
+                    quest_id = reg[0].strip('question')
+                    choice_id = reg[1].strip('choice')
+                    answers_list.append([reg[0].strip('question'),reg[1].strip('choice')])
+                    answer = Answers.objects.get(id=choice_id)
+                    question = Question.objects.get(id=quest_id)
+                    # correct_answers_list.append([ans.question, ans.answer])
+                    # print(quest_id, questions_answered_list)
+                    # if answer.correct and quest_id not in questions_answered_list:
+                    #     correct_answers_list.append([question.text, answer.text])
+                    #     correct_count += 1
+                    #     continue
+                    # elif answer.correct and quest_id in questions_answered_list:
+                    #     correct_count -= 1
+                    #     # correct_answers_list.remove([question.text, answer.text])
+                    # else: 
+                    #     correct_count -= 1
+                    # questions_answered_list.append(quest_id)
+
+            # print('answers_list: ', answers_list)
+            # print('----------------------------------')
+
+            your_answers = []
+            for q in answers_list:
+                quest = Question.objects.get(id=q[0])
+                answ = Answers.objects.get(id=q[1])
+                your_answers.append([quest.text, answ.text])
+
+            # print(your_answers)
+            # print('----------------------------------')
+            # print(correct_answers_list)
+            # print('----------------------------------')
+
+            score_count = 0
+            for ans in your_answers:
+                if ans in correct_answers_list:
+                    score_count += 1
+                else:
+                    score_count -= 1
+            print(score_count)
+            
+            if score_count <= 0:
+                print('Your score is: ', 0)
+                score = 0
+            else:
+                score = int((quiz.points*score_count)/total_ans_count)
+                print('Your score is: ', score, '%')
+            
+          
+            rere = Results.objects.filter(user=request.user, quiz=quiz, score=0)
+            print(rere)
+            Results.objects.select_for_update().filter(user=request.user, quiz=quiz, score=0).update(score=score)
+
+            number_of_total_grades = int(quiz.points)
+            gr = int(score)
+            clss = Class.objects.get(name=class_name)
+            try:
+                try:
+                    grade = Grade.objects.get(className=clss, studentName=student)
+                    number_of_total_grades = grade.number_of_total_grades + int(quiz.points)
+                    gr = grade.grade + int(score)
+                except Grade.DoesNotExist:
+                    grade = Grade(className=clss, studentName=student)
+                    grade.save()
+                Grade.objects.select_for_update().filter(className=clss, studentName=student).update(number_of_total_grades=number_of_total_grades, grade=gr)
+            except:
+                pass
+      
+            # print(correct_answers_list)
+            # print(checks)
+            # for c in checks:
+            #     if c in correct_answers_list:
+            #         print(c, ' correct')
+            #     else:
+            #         print(c, ' False'
+
+            ctx_quiz = {'correct_answers_list': correct_answers_list, 'answers': your_answers, 'score': score}
+            return render(request, 'class/quiz_score.html', ctx_quiz)
+        ctx = {'quiz': quiz}
+        if len(quiz.results_set.filter(user=request.user)) != 0:
+            print('You already took the test')
+            return redirect('class:class_info', class_name)
+        res = Results(quiz=quiz, user=request.user, score=0)
+        res.save()
+        return render(request, 'class/quiz.html', ctx)
+
+    else:
+        print('you do not have access')
+        return redirect('class:class_info', class_name)
+
+def submitted_quizes(request, class_name):
+    if request.user.groups.filter(name='Teachers').exists():
+        try:
+            cl = Class.objects.get(name=class_name)
+        except Class.DoesNotExist:
+            print('Class Does not exist')
+            return redirect('class:index')
+        class_quizes = Quiz.objects.filter(class_name=cl)
+
+        if cl.teacher.user == request.user:
+            pass
+        else:
+            print("you do not have access")
+            return redirect('class:class_info', class_name)
+
+        for quiz in class_quizes:
+            print(quiz, quiz.results_set.all())
+
+        ctx = {'class_quizes': class_quizes, 'class_name': class_name}
+        return render(request, 'class/submitted_quizes.html', ctx)
+    else:
+        print("you do not have access")
+        return redirect('class:class_info', class_name)
+
+def view_submitted_quiz(request, class_name, quiz_id):
+    try:
+        quiz = Quiz.objects.get(id=quiz_id)
+    except Quiz.DoesNotExist:
+        print('quiz Does not exist')
+        return redirect('class:class_info', class_name)
+    
+    try:
+        cl = Class.objects.get(name=class_name)
+    except Class.DoesNotExist:
+        print('Class Does not exist')
+        return redirect('class:index')
+        
+    if request.user.groups.filter(name='Teachers').exists():
+        if cl.teacher.user == request.user:
+            pass
+        else:
+            print("you do not have access")
+            return redirect('class:class_info', class_name)
+
+        submitted = Results.objects.filter(quiz=quiz)
+        ctx = {'class_name': class_name, 'quiz': quiz, 'submitted': submitted}
+        return render(request, 'class/view_submitted_quiz.html', ctx)
+    else:
+        print("you do not have access")
+        return redirect('class:class_info', class_name)
+
+def class_grades(request, class_name):
+    try:
+        cl = Class.objects.get(name=class_name)
+    except Class.DoesNotExist:
+        print('Class Does not exist')
+        return redirect('class:index')
+
+    #--------------------------------------------------
+    # TODO add so teacher can view all students grades
+    #--------------------------------------------------
+
+    try:
+        student = Student.objects.get(user=request.user)
+    except Student.DoesNotExist:
+        print("You are not a student")
+    
+    try:
+        grades = Grade.objects.get(studentName=student, className = cl)
+    except Grade.DoesNotExist:
+        print('Studnent has no grades yet')
+        grades = ''
+    class_quizes = Quiz.objects.filter(class_name=cl)
+    res = []
+    for quiz in class_quizes:
+        try:
+            res.append(Results.objects.get(user=request.user, quiz=quiz))
+        except:
+            pass
+
+    assignemnts = Assignment.objects.filter(class_name=cl, noted=True)
+    submitted_ass = []
+    for ass in assignemnts:
+        try:
+            submitted_ass.append(ass.submittedassignments_set.get(submitted_by=request.user, status='graded'))
+        except:
+            pass
+    print(submitted_ass)
+
+    ctx ={'grades': grades, 'res': res, 'submitted_ass': submitted_ass}
+    return render(request, 'class/class_grades.html', ctx)
+
+
+
+
+
+
+
+
 
 
 

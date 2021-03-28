@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Student, Teacher, Class, Grade, ClassMaterials, ClassMaterialsChapter, Files, ClassMaterialsModule, Comments, Times, Assignment, SubmittedAssignments
+from .models import Student, Teacher, Class, Grade, ClassMaterials, ClassMaterialsChapter, Files, ClassMaterialsModule, Comments, Times, Assignment, SubmittedAssignments, Quiz, Answers, Question, Results
 # Register your models here.
 
 admin.site.register(Student)
@@ -14,3 +14,13 @@ admin.site.register(Comments)
 admin.site.register(Times)
 admin.site.register(Assignment)
 admin.site.register(SubmittedAssignments)
+admin.site.register(Quiz)
+admin.site.register(Results)
+
+class AnswerInline(admin.TabularInline):
+    model = Answers
+class QuestionAdmin(admin.ModelAdmin):
+    inlines = [AnswerInline]
+
+admin.site.register(Question, QuestionAdmin)
+admin.site.register(Answers)
