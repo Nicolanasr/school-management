@@ -3,7 +3,7 @@ import os
 from django.conf import settings
 from django import http
 from django.http import JsonResponse
-from django.contrib.auth.models import User
+from django.contrib.auth.models import PermissionManager, User
 from django.contrib import messages
 from django.http import response
 from django.http.response import Http404, HttpResponse
@@ -261,7 +261,7 @@ def new_chapter(request):
         new_chapter = request.POST.get('new_chapter')
         new_chapter_desc = request.POST.get('new_chapter_desc')
         try:
-            class_name = Class.objects.get(name=class_name)
+            class_name = Class.objects.get(id=class_name)
         except Class.DoesNotExist:
             print('Class Does not exist')
             return redirect('class:index')

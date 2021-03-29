@@ -34,7 +34,7 @@
             <a href="#nav-contact" class="nav-link" data-toggle="tab">Assignments ({{class_assignments.count}})</a>
         </li>
         <li class="nav-item">
-            <a href="#nav-quiz" class="nav-link" data-toggle="tab">Quizes</a>
+            <a href="#nav-quiz" class="nav-link" data-toggle="tab">Quizes ({{ quizes|length  }})</a>
         </li>
         <li class="nav-item">
             <a href="#nav-comment" class="nav-link" data-toggle="tab">Comments ({{comments.count}})</a>
@@ -257,7 +257,7 @@
         {% endif %}
     </div>
     <div class="tab-pane fade" id="nav-quiz" role="tabpanel" aria-labelledby="nav-quiz-tab">
-    {% if quizes.count < 1 %}
+    {% if quizes|length  < 1 %}
         Quizes will show here
     {% else %}
         <table class='table'>
@@ -272,7 +272,7 @@
                 <tr>
                     <td>
                         <button type="button" class="btn text-primary p-0" data-bs-toggle="modal" data-bs-target="#staticBackdrop{{ forloop.counter }}">
-                            {{ quiz.title }}
+                            {{ quiz.title }} 
                         </button>
                     </td>
                     <td>{{ quiz.time }} min</td>

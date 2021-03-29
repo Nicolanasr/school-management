@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
+    'admin_reorder',
     'index',
     'class',
 ]
@@ -56,8 +57,22 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'admin_reorder.middleware.ModelAdminReorder',
     
 ]
+
+ADMIN_REORDER = (
+    'sites',
+
+    {'app': 'auth', 'models': ('auth.User', 'auth.Group', 'class.Student', 'class.Teacher')},
+
+
+    {'app': 'class', 'label':'Quiz',  'models': ('class.Quiz', 'class.Question', 'class.Answers', 'class.Results')},
+    {'app': 'class', 'label':'Assignment',  'models': ('class.Assignment', 'class.SubmittedAssignments', )},
+    {'app': 'class', 'label':'Materials',  'models': ('class.ClassMaterialsChapter', 'class.ClassMaterialsModule', 'class.Files')},
+
+    {'app': 'class', 'label': 'Class'},
+)
 
 ROOT_URLCONF = 'schoolManagement.urls'
 

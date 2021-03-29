@@ -3,7 +3,7 @@ from django.db import models
 from django.contrib.auth.models import Group, User
 from django.db.models.fields.json import HasKeyLookup
 from django.db.models.fields.related import ForeignKey
-from django.db.models.signals import post_save, m2m_changed, pre_save
+from django.db.models.signals import post_save, m2m_changed, pre_save, pre_delete
 from django.dispatch import receiver
 from django.http.response import Http404, HttpResponse
 # Create your models here.
@@ -226,9 +226,17 @@ def add_model_when_grp(action, instance, pk_set, model, **kwargs):
             group = Group.objects.get(id=id)
             user = User.objects.get(username=instance)
             if str(group) == 'Teachers':
+                tchr = Teacher.objects.filter(user=user)
+                if len(tchr) != 0:
+                    raise Http404('Teacher already exits!!')
+
                 teacher = Teacher(user=user)
                 teacher.save()
             elif str(group) == 'Students':
+                std = Student.objects.filter(user=user)
+                if len(std) != 0:
+                    raise Http404('Student already exits!!')
+                    
                 student = Student(user=user)
                 student.save()
         if action == 'post_remove':
@@ -239,9 +247,65 @@ def add_model_when_grp(action, instance, pk_set, model, **kwargs):
             elif str(group) == 'Students':
                 Student.objects.filter(user=user).delete()
 
+# Add the teacher/student to the corresponding group if teacher/student object is directly created
+def add_to_grp_when_user(sender, instance, created, **kwargs):
+    if created:
+        user = User.objects.get(username=instance)
+        try:
+            grp = Group.objects.get(name='Students')
+        except Group.DoesNotExist:
+            grp = Group(name='Students')
+            grp.save()
+            grp = Group.objects.get(name='Students')
+        student = Student.objects.get(user=user)
+        grp.user_set.add(user)
+
+def add_to_grp_when_user_teacher(sender, instance, created, **kwargs):
+    if created:
+        user = User.objects.get(username=instance)
+        print(user)
+        try:
+            grp = Group.objects.get(name='Teachers')
+        except Group.DoesNotExist:
+            grp = Group(name='Teachers')
+            grp.save()
+            grp = Group.objects.get(name='Teachers')
+        teacher = Teacher.objects.get(user=user)
+        grp.user_set.add(user)
 
 
-# assign each created user as a student
+post_save.connect(add_to_grp_when_user_teacher, sender=Teacher)
+
+# Remove the teacher/student to the corresponding group if teacher/student object is directly created
+def remove_to_grp_when_user(sender, instance, **kwargs):
+    user = User.objects.get(username=instance)
+    try:
+        grp = Group.objects.get(name='Students')
+    except Group.DoesNotExist:
+        grp = Group(name='Students')
+        grp.save()
+        grp = Group.objects.get(name='Students')
+    student = Student.objects.get(user=user)
+    grp.user_set.remove(user)
+
+
+pre_delete.connect(remove_to_grp_when_user, sender=Student)
+
+def remove_to_grp_when_user_teacher(sender, instance, **kwargs):
+    user = User.objects.get(username=instance)
+    try:
+        grp = Group.objects.get(name='Teachers')
+    except Group.DoesNotExist:
+        grp = Group(name='Teachers')
+        grp.save()
+        grp = Group.objects.get(name='Teachers')
+    teacher = Teacher.objects.get(user=user)
+    grp.user_set.remove(user)
+
+
+pre_delete.connect(remove_to_grp_when_user_teacher, sender=Teacher)
+
+# assign each newly created account as a student
 def create_user(sender, instance, created, **kwargs):
     if created:
         user = User.objects.get(username=instance)
