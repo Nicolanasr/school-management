@@ -6,6 +6,27 @@
 
 {% if grades == '' %}
 No grades for that class Yet!
+{% elif is_teacher %}
+{{class_name}}
+    <table class="table table-hover">
+    <thead>
+        <tr>
+            <th>Student</th>
+            <th>Grade</th>
+        </tr>
+        </thead>
+        {% for student, grade in grades.items %}
+            <tr class='clickable-row' data-href="{% url 'class:student_grade' class_name student%}" style="cursor: pointer;">
+                <td><span class="text-primary">{{ student }}</span></td>
+                {% if grade == "" %}
+                    <td>No grades yet</td>
+                {% else %}
+                    <td>{{ grade }}</td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+    </table>
+
 {% else %}
 
 <h3>{{ grades.className }}: {{grades.grade}}/{{ grades.number_of_total_grades }}</h3>
@@ -48,6 +69,15 @@ No grades for that class Yet!
     </table>
 </div>
 {% endif %}
+
+
+<script>
+  jQuery(document).ready(function($) {
+    $(".clickable-row").click(function() {
+        window.location = $(this).data("href");
+    });
+});
+</script>
 
 
 {% endblock %}

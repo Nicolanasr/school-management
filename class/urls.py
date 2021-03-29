@@ -22,6 +22,7 @@ urlpatterns = [
     path('<str:class_name>/quiz/submitted_quizes', views.submitted_quizes, name="submitted_quizes"),
     path('<str:class_name>/quiz/submitted_quizes/<int:quiz_id>', views.view_submitted_quiz, name="view_submitted_quiz"),
     path('<str:class_name>/grades', views.class_grades, name="class_grades"),
+    path('<str:class_name>/grades/<str:student_name>', views.student_grade, name="student_grade"),
     # path('add/new_for_class/', views.new_for_class, name='new_for_class'),
     # path('add/<str:classe>/new_for_chapter/', views.new_for_chapter, name='new_for_chapter'),
     # path('add/<str:chapter>/new_for_module/', views.new_for_module, name='new_for_module'),

@@ -1,0 +1,49 @@
+{% extends 'index/base.html' %}
+{% load custom_tags %}
+{% load humanize %}
+{% block title %}Grades{% endblock %}
+{% block content %}
+
+
+
+<h3>{{ grades.className }}-{{ grades.studentName }}: {{grades.grade}}/{{ grades.number_of_total_grades }}</h3>
+<br>
+<div class="">
+    <h4>Quizes</h4>
+    <table class="table">
+        <tr>
+            <th>Quiz title</th>
+            <th>Points scored</th>
+            <th>Date submitted</th>
+        </tr>
+        {%for r in res%}
+        <tr>
+            <td>{{r.quiz.title}}</td>
+            <td>{{r.score}}/{{ r.quiz.points }}</td>
+            <td>{{r.submitted_date}}</td>
+        </tr>
+        {%endfor%}
+
+    </table>
+</div>
+<hr>
+<div class="">
+    <h4>Assignments</h4>
+    <table class="table">
+        <tr>
+            <th>Assignment title</th>
+            <th>Points scored</th>
+            <th>Date submitted</th>
+        </tr>
+        {%for sub_ass in submitted_ass%}
+        <tr>
+            <td>{{sub_ass.assignment.title}}</td>
+            <td>{{sub_ass.grade}}/{{ sub_ass.assignment.points }}</td>
+            <td>{{sub_ass.submitted_date}}</td>
+        </tr>
+        {%endfor%}
+
+    </table>
+</div>
+
+{% endblock %}

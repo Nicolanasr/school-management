@@ -96,6 +96,10 @@ def class_info(request, class_name):
         except:
             student_class = False
             pass
+        try:
+            className.teacher.user == request.user
+        except:
+            return redirect('class:index')
         if className.teacher.user == request.user or student_class:
             pass
         else:
@@ -651,20 +655,34 @@ def view_submitted_quiz(request, class_name, quiz_id):
         return redirect('class:class_info', class_name)
 
 def class_grades(request, class_name):
+    is_teacher = False
     try:
         cl = Class.objects.get(name=class_name)
     except Class.DoesNotExist:
         print('Class Does not exist')
         return redirect('class:index')
 
-    #--------------------------------------------------
-    # TODO add so teacher can view all students grades
-    #--------------------------------------------------
+    if (request.user.groups.filter(name='Teachers').exists()):
+        is_teacher = True
+        all_students = Student.objects.filter(className=cl)
+        grades = {}
+        for st in all_students:
+            try:
+                grade = Grade.objects.get(studentName=st)
+                print(f"student: {st}-grade:{grade.grade}")
+                grades[st] = grade.grade
+            except:
+                print(f"student: {st}-no grades yet for this student")
+                grades[st] = ""
+        print(grades)
+        ctx = {'is_teacher': is_teacher, 'grades': grades, 'class_name': class_name}
+        return render(request, 'class/class_grades.html', ctx)
 
     try:
         student = Student.objects.get(user=request.user)
-    except Student.DoesNotExist:
+    except:
         print("You are not a student")
+        return redirect('class:class_info', class_name)
     
     try:
         grades = Grade.objects.get(studentName=student, className = cl)
@@ -691,7 +709,68 @@ def class_grades(request, class_name):
     ctx ={'grades': grades, 'res': res, 'submitted_ass': submitted_ass}
     return render(request, 'class/class_grades.html', ctx)
 
+def student_grade(request, class_name, student_name):
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+    except Teacher.DoesNotExist:
+        print('You are not a teacher')
+        return redirect('class:class_info', class_name)
+    
+    try:
+        cl = Class.objects.get(name=class_name)
+    except Class.DoesNotExist:
+        print('Class Does not exist')
+        return redirect('class:index')
 
+    try:
+        user = User.objects.get(username=student_name)
+    except User.DoesNotExist:
+        print("User with that username does not exist")
+        return redirect('class:class_info', class_name)
+
+    try:
+        student = Student.objects.get(user=user)
+    except Student.DoesNotExist:
+        print("Student Does not exist")
+        return redirect('class:class_info', class_name)
+
+    is_part = False
+    if cl in teacher.class_set.all():
+        for st in Student.objects.filter(className=cl):
+            if st == student:
+                is_part = True
+                break
+    else:
+        print('You are not a teacher of that class')
+        return redirect('class:class_info', class_name)
+
+    if is_part:
+        class_quizes = Quiz.objects.filter(class_name=cl)
+        res = []
+        try:
+            grades = Grade.objects.get(studentName=student, className = cl)
+        except Grade.DoesNotExist:
+            print('Studnent has no grades yet')
+            grades = ''
+        for quiz in class_quizes:
+            try:
+                res.append(Results.objects.get(user=user, quiz=quiz))
+            except:
+                pass
+
+        assignemnts = Assignment.objects.filter(class_name=cl, noted=True)
+        submitted_ass = []
+        for ass in assignemnts:
+            try:
+                submitted_ass.append(ass.submittedassignments_set.get(submitted_by=user, status='graded'))
+            except:
+                pass
+    else:
+        print('This student is not a part of your class')
+        return redirect('class:class_grades', class_name)
+
+    ctx = {'grades':grades, 'res': res, 'submitted_ass': submitted_ass}
+    return render(request, 'class/student_grade.html', ctx)
 
 
 
