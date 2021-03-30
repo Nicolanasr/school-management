@@ -8,6 +8,9 @@ app_name = 'class'
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('enroll/', views.enroll, name='enroll'),
+    path('check_enrollement_submissions/', views.check_enrollement_submissions, name='check_enrollement_submissions'),
+    path('enroll/<str:class_name>', views.enroll_class, name='enroll_class'),
     path('<str:class_name>/', views.class_info, name='class_info'),
     path('<str:class_name>/Assignment/<int:class_assignment_id>', views.class_assignment, name='class_assignment'),
     path('add/new', views.add_new_mat, name="add_new_mat"),

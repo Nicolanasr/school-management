@@ -1,0 +1,35 @@
+{% extends 'index/base.html' %}
+{% load custom_tags %}
+{% load humanize %}
+{% block title %}Enrollements submissions{% endblock %}
+{% block content %}
+
+<h5>Below is a table of students that have submitted a request to enroll in a class</h5>
+
+
+<table class="table">
+    <tr>
+        <th>Student</th>
+        <th>Class</th>
+        <th>Approve?</th>
+    </tr>
+    {% for sub in submissions %}
+        <tr>
+            <td>{{ sub.student }}</td>
+            <td>{{ sub.class_name }}</td>
+            <form action="" method="POST">
+                {% csrf_token %}
+                <input type="text" value="{{sub.student.id}}" name="student_id" hidden>
+                <input type="text" value="{{sub.class_name.id}}" name="class_id" hidden>
+                <td><button class="btn btn-success" name="approve" value="yes">Yes</button> <button name="approve" value="no" class="btn btn-danger">No</button> </td>
+            </form>
+        </tr>
+    {% endfor %}
+</table>
+
+
+
+
+
+
+{% endblock %}

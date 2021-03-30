@@ -2,16 +2,17 @@ from os import name
 import os
 from django.conf import settings
 from django import http
+from django.db import reset_queries
 from django.http import JsonResponse
 from django.contrib.auth.models import PermissionManager, User
 from django.contrib import messages
 from django.http import response
 from django.http.response import Http404, HttpResponse
 from django.shortcuts import redirect, render
-from .models import Assignment, Comments, Results, Student, Class, Teacher, Grade, ClassMaterials, ClassMaterialsChapter, ClassMaterialsModule, Files, Times, SubmittedAssignments, Quiz, Answers, Question
+from .models import Assignment, Comments, Results, Student, Class, Teacher, Grade, ClassMaterials, ClassMaterialsChapter, ClassMaterialsModule, Files, Times, SubmittedAssignments, Quiz, Answers, Question, EnrollementsAwaiting
 import json
 from django.http import HttpResponse
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, time, timezone, timedelta
 import datetime
 import re
 
@@ -772,10 +773,106 @@ def student_grade(request, class_name, student_name):
     ctx = {'grades':grades, 'res': res, 'submitted_ass': submitted_ass}
     return render(request, 'class/student_grade.html', ctx)
 
+def enroll(request):
+    classes_list = Class.objects.all()
+    classes_to_enroll = []
+    try:
+        student = Student.objects.get(user=request.user)
+        classes = student.className.all()
+    except:
+        print("you are not a student")
+        return redirect('class:index')
+    for cl in classes_list:
+        if cl in classes:
+            continue
+        else:
+            classes_to_enroll.append(cl)
+
+    ctx = {"classes_list": classes_to_enroll}
+    return render(request, 'class/enroll.html', ctx)
+
+def enroll_class(request, class_name):
+    if request.method == "POST":
+        class_id = request.POST.get('class_id')
+        try:
+            class_name = Class.objects.get(id=class_id)
+        except Class.DoesNotExist:
+            print('Class Does not exist')
+            return redirect('class:index')
+
+        try:
+            student = Student.objects.get(user=request.user)
+        except Student.DoesNotExist:
+            print("Student does not exist")
+            return redirect("class:enroll")
+
+        try:
+            EnrollementsAwaiting.objects.get(student=student, class_name=class_name)
+            print("You have already submitted a request to enroll in this class please wait you administration response!")
+            return redirect("class:enroll")
+        except:
+            pass
+        
+        EnrollementsAwaiting(student=student, class_name=class_name).save()
+        print(f"Your request to enroll for class \"{class_name.name}\" was submitted please wait patiently for your application to be reviewed!")
+        return redirect('class:enroll')
+
+    try:
+        student = Student.objects.get(user=request.user)
+        classes = student.className.all()
+    except:
+        print("you are not a student")
+        return redirect('class:index')
+    try:
+        class_obj = Class.objects.get(name=class_name)
+    except Class.DoesNotExist:
+        print('Class Does not exist')
+        return redirect('class:index')
+
+    if class_obj in classes:
+        print("You are already enrolled in that class")
+        return redirect('class:class_info', class_obj.name)
+
+    times = Times.objects.filter(class_name=class_obj)
+    print(times)
+
+    ctx = {"class_obj": class_obj, "times": times}
+    return render(request, 'class/enroll_class.html', ctx)
+
+def check_enrollement_submissions(request):
+    if request.method == "POST":
+        student_id = request.POST.get('student_id')
+        class_id = request.POST.get('class_id')
+        approve = request.POST.get('approve')
+        try:
+            class_name = Class.objects.get(id=class_id)
+        except Class.DoesNotExist:
+            print('Class Does not exist')
+            return redirect('class:index')
+
+        try:
+            student = Student.objects.get(id=student_id)
+        except Student.DoesNotExist:
+            print("Student Does Not Exist")
+            return redirect('class:index')
+
+        if approve == 'yes':
+            student.className.add(class_name)
+            print(f'student {student.user.username} successfully enrolled in {class_name}')
+        else:
+            print('declined')
+        
+        EnrollementsAwaiting.objects.filter(student=student, class_name=class_name).delete()
 
 
+    if not request.user.is_superuser:
+        print('You cannot do that')
+        return redirect('class:index')
+    
+    submissions = EnrollementsAwaiting.objects.all()
 
-
+    ctx = {"submissions": submissions}
+    return render(request, 'class/check_enrollement_submissions.html', ctx)
 
 
 

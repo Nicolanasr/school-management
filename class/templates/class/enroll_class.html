@@ -1,0 +1,62 @@
+{% extends 'index/base.html' %}
+{% load custom_tags %}
+{% load humanize %}
+{% block title %}Enroll {{ class_obj.name }}{% endblock %}
+{% block content %}
+
+
+<div class="container-lg">
+    <div class="d-flex justify-content-between">
+        <div>
+            <p class="fs-5">You are enrolling for the class <span class="fw-bold">{{ class_obj.name }}</span> as <span class="fw-bold">{{ request.user }}</span></p>
+            <p>Below is the schedule for that class:</p>
+        </div>
+        <div class="">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#enrollmodal">Enroll</button>
+        </div>
+    </div>
+    
+    <table class="table">
+        <tr>
+            <th>Day</th>
+            <th>time</th>
+        </tr>
+        {% for time in times %}
+            <tr>
+                <td>{{ time.day }}</td>
+                <td>{{ time.time }}</td>
+            </tr>
+        {% endfor %}
+            
+    </table>
+</div>
+
+
+
+<div class="modal fade" id="enrollmodal" tabindex="-1" aria-labelledby="enrollmodalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="enrollmodalLabel">Are you sure you want to enroll in "{{ class_obj.name }}"</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Please confirm your enrollement in the class: {{ class_obj.name }}. <br>
+        <p class="form-text"> If you confirm, a request will be submitted to an administrator and they will either accept or reject your application</p>
+        
+      </div>
+      <div class="modal-footer">
+      <form action="" method="POST">
+        {% csrf_token %}
+        <input type="text" hidden value="{{ class_obj.id }}" name="class_id">
+        <button type="submit" class="btn btn-primary">Confirm</button>
+      </form>
+        <button type="submit" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+{% endblock %}

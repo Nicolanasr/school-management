@@ -214,7 +214,12 @@ class Grade(models.Model):
     studentName = models.ForeignKey(Student, on_delete=models.CASCADE, blank=True, null=True)
     number_of_total_grades = models.IntegerField(default=0)
 
-
+class EnrollementsAwaiting(models.Model):
+    def __str__(self):
+        return (f"{self.student}-{self.class_name}")
+    
+    class_name = models.ForeignKey(Class, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
 
 # Create a teacher/student model when a user is added to one of these groups
 @receiver(m2m_changed)
