@@ -3,7 +3,17 @@
 {% block title %}{{ assignment.title }}{% endblock %}
 {% block content %}
 
-
+{% for msg in messages %}
+{% if msg.tags == "error" %}
+<div class="alert alert-danger" role="alert">
+    {{msg}}
+</div>
+{%else%}
+<div class="alert alert-{{ msg.tags }}" role="alert">
+    {{msg}}
+</div>
+{% endif %}
+{% endfor %}
 <div class='container'>
     {% if assignment.noted %}
     <p class='d-flex justify-content-end fs-5'>Grade: {{grade}}/{{assignment.points}}</p>

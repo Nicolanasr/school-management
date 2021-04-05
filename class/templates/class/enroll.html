@@ -5,6 +5,18 @@
 {% block content %}
 
 
+{% for msg in messages %}
+{% if msg.tags == "error" %}
+<div class="alert alert-danger" role="alert">
+    {{msg}}
+</div>
+{%else%}
+<div class="alert alert-{{ msg.tags }}" role="alert">
+    {{msg}}
+</div>
+{% endif %}
+{% endfor %}
+
 <table class="table table-hover">
     <thead>
         <tr>

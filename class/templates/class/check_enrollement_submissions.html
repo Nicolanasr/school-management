@@ -4,6 +4,18 @@
 {% block title %}Enrollements submissions{% endblock %}
 {% block content %}
 
+{% for msg in messages %}
+{% if msg.tags == "error" %}
+<div class="alert alert-danger" role="alert">
+    {{msg}}
+</div>
+{%else%}
+<div class="alert alert-{{ msg.tags }}" role="alert">
+    {{msg}}
+</div>
+{% endif %}
+{% endfor %}
+
 <h5>Below is a table of students that have submitted a request to enroll in a class</h5>
 
 

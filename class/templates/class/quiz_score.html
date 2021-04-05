@@ -4,6 +4,18 @@
 {% block title %}Quiz Results{% endblock %}
 {% block content %}
 
+{% for msg in messages %}
+{% if msg.tags == "error" %}
+<div class="alert alert-danger" role="alert">
+    {{msg}}
+</div>
+{%else%}
+<div class="alert alert-{{ msg.tags }}" role="alert">
+    {{msg}}
+</div>
+{% endif %}
+{% endfor %}
+
 <p class="fs-3">Score: {{score}}/100</p>
 
 <table class="table">

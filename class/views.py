@@ -65,7 +65,8 @@ def index(request):
                     pass
         elif (request.user.groups.filter(name='Teachers').exists()):
             grades = 'not_student'
-            print('You are not a student')
+            # print('You are not a student')
+            # messages.warning(request, "You cannot perform this action for the following reason(s): You are not a student'")
         if len(grades) == 0:
             grades = None
 
@@ -86,6 +87,7 @@ def class_info(request, class_name):
         try:
             className = Class.objects.get(name=class_name)
         except Class.DoesNotExist:
+            messages.error(request, "Class Does not exist")
             print('Class Does not exist')
             return redirect('class:index')
         try:
@@ -104,6 +106,7 @@ def class_info(request, class_name):
         if className.teacher.user == request.user or student_class:
             pass
         else:
+            messages.warning(request, "you do not have access")
             print('you do not have access')
             return redirect('class:index')
         class_assignments = Assignment.objects.filter(class_name=className)
@@ -197,6 +200,7 @@ def class_info(request, class_name):
         ctx = {'className': className, 'chap_mod': chap_mod, 'is_teacher':is_teacher, 'comments': comments, 'class_assignments': class_assignments, 'status_list': status_list, 'quizes': quizes_list}
     except Class.DoesNotExist:
         ctx = {}
+        messages.error(request, "Class Does not exist")
         print('class Does not exist')
     return render(request, 'class/class.html', ctx)
 
@@ -225,6 +229,7 @@ def getdetails(request):
             try:
                 cl = Class.objects.get(id=class_id)
             except Class.DoesNotExist:
+                messages.error(request, "Class Does not exist")
                 print('Class Does not exist')
                 return redirect('class:index')
             print('saving')
@@ -268,8 +273,10 @@ def new_chapter(request):
         try:
             class_name = Class.objects.get(id=class_name)
         except Class.DoesNotExist:
+            messages.error(request, "Class Does not exist")
             print('Class Does not exist')
             return redirect('class:index')
+        print(class_name.classmaterialschapter_set.filter(name=new_chapter))
         if class_name.classmaterialschapter_set.filter(name=new_chapter):
             messages.warning(request, "Chapter name: \'" + str(new_chapter) + "\' already exists in this class")
             return redirect('class:add_new_mat')
@@ -365,6 +372,7 @@ def view_all_submitted_assignment(request, class_name):
     try:
         cl = Class.objects.get(name=class_name)
     except Class.DoesNotExist:
+        messages.error(request, "Class Does not exist")
         print('Class does not exist')
         return redirect('class:index')
         
@@ -373,6 +381,7 @@ def view_all_submitted_assignment(request, class_name):
         ctx = {'all_ass': all_ass, 'class_name': cl}
         return render(request, 'class/view_all_submitted_assignment.html', ctx)
     else:
+        messages.error(request, "You do not have access")
         print('You do not have access')
         return redirect('class:class_info', class_name)
 
@@ -387,6 +396,7 @@ def view_submitted_assignment(request, class_name, assignment):
             points = request.POST.get('points')
             submitted_id = request.POST.get('submitted_id')
             if int(points) > ass.points:
+                messages.error(request, "Something went wrong")
                 print('you cant do that')
             else:
                 print(points)
@@ -397,6 +407,7 @@ def view_submitted_assignment(request, class_name, assignment):
                 try: 
                     student = Student.objects.get(user=submitted_by)
                 except Student.DoesNotExist:
+                    messages.error(request, "student does not existt")
                     print('student does not exist')
                     return redirect('class:view_submitted_assignment', class_name, assignment)
                 number_of_total_grades = ass.points
@@ -463,6 +474,7 @@ def new_quiz(request, class_name):
             try:
                 class_object = Class.objects.get(name=class_name)
             except Class.DoesNotExist:
+                messages.error(request, "Class does not exist")
                 print('Class Does not exist')
                 return redirect('class:index')
             quiz = Quiz(title=title, class_name=class_object, time=duration, points=to_pass, max_time_to_take=date_time)
@@ -481,6 +493,7 @@ def quiz(request, class_name, quiz_id):
     try:
         quiz = Quiz.objects.get(id=quiz_id)
     except Quiz.DoesNotExist:
+        messages.error(request, "Quiz does not exist")
         print('quiz Does not exist')
         return redirect('class:class_info', class_name)
     
@@ -594,6 +607,7 @@ def quiz(request, class_name, quiz_id):
             return render(request, 'class/quiz_score.html', ctx_quiz)
         ctx = {'quiz': quiz}
         if len(quiz.results_set.filter(user=request.user)) != 0:
+            messages.error(request, "You already took the test")
             print('You already took the test')
             return redirect('class:class_info', class_name)
         res = Results(quiz=quiz, user=request.user, score=0)
@@ -601,6 +615,7 @@ def quiz(request, class_name, quiz_id):
         return render(request, 'class/quiz.html', ctx)
 
     else:
+        messages.error(request, "You do not have access")
         print('you do not have access')
         return redirect('class:class_info', class_name)
 
@@ -609,6 +624,7 @@ def submitted_quizes(request, class_name):
         try:
             cl = Class.objects.get(name=class_name)
         except Class.DoesNotExist:
+            messages.error(request, "Class does not exist")
             print('Class Does not exist')
             return redirect('class:index')
         class_quizes = Quiz.objects.filter(class_name=cl)
@@ -616,6 +632,7 @@ def submitted_quizes(request, class_name):
         if cl.teacher.user == request.user:
             pass
         else:
+            messages.error(request, "You do not have access")
             print("you do not have access")
             return redirect('class:class_info', class_name)
 
@@ -625,6 +642,7 @@ def submitted_quizes(request, class_name):
         ctx = {'class_quizes': class_quizes, 'class_name': class_name}
         return render(request, 'class/submitted_quizes.html', ctx)
     else:
+        messages.error(request, "You do not have access")
         print("you do not have access")
         return redirect('class:class_info', class_name)
 
@@ -632,12 +650,14 @@ def view_submitted_quiz(request, class_name, quiz_id):
     try:
         quiz = Quiz.objects.get(id=quiz_id)
     except Quiz.DoesNotExist:
+        messages.error(request, "Quiz does not exist")
         print('quiz Does not exist')
         return redirect('class:class_info', class_name)
     
     try:
         cl = Class.objects.get(name=class_name)
     except Class.DoesNotExist:
+        messages.error(request, "Quiz does not exist")
         print('Class Does not exist')
         return redirect('class:index')
         
@@ -645,6 +665,7 @@ def view_submitted_quiz(request, class_name, quiz_id):
         if cl.teacher.user == request.user:
             pass
         else:
+            messages.error(request, "You do not have access")
             print("you do not have access")
             return redirect('class:class_info', class_name)
 
@@ -652,6 +673,7 @@ def view_submitted_quiz(request, class_name, quiz_id):
         ctx = {'class_name': class_name, 'quiz': quiz, 'submitted': submitted}
         return render(request, 'class/view_submitted_quiz.html', ctx)
     else:
+        messages.error(request, "You do not have access")
         print("you do not have access")
         return redirect('class:class_info', class_name)
 
@@ -660,6 +682,7 @@ def class_grades(request, class_name):
     try:
         cl = Class.objects.get(name=class_name)
     except Class.DoesNotExist:
+        messages.error(request, "Class does not exist")
         print('Class Does not exist')
         return redirect('class:index')
 
@@ -682,13 +705,15 @@ def class_grades(request, class_name):
     try:
         student = Student.objects.get(user=request.user)
     except:
+        messages.error(request, "You cannot perform this action for the following reason(s): You are not a student")
         print("You are not a student")
         return redirect('class:class_info', class_name)
     
     try:
         grades = Grade.objects.get(studentName=student, className = cl)
     except Grade.DoesNotExist:
-        print('Studnent has no grades yet')
+        messages.error(request, "Student has no grades yet")
+        print('Student has no grades yet')
         grades = ''
     class_quizes = Quiz.objects.filter(class_name=cl)
     res = []
@@ -714,24 +739,28 @@ def student_grade(request, class_name, student_name):
     try:
         teacher = Teacher.objects.get(user=request.user)
     except Teacher.DoesNotExist:
+        messages.error(request, "Student has no grades yet")
         print('You are not a teacher')
         return redirect('class:class_info', class_name)
     
     try:
         cl = Class.objects.get(name=class_name)
     except Class.DoesNotExist:
+        messages.error(request, "Class Does not exist")
         print('Class Does not exist')
         return redirect('class:index')
 
     try:
         user = User.objects.get(username=student_name)
     except User.DoesNotExist:
+        messages.error(request, "User with that username does not exist")
         print("User with that username does not exist")
         return redirect('class:class_info', class_name)
 
     try:
         student = Student.objects.get(user=user)
     except Student.DoesNotExist:
+        messages.error(request, "Student does not exist")
         print("Student Does not exist")
         return redirect('class:class_info', class_name)
 
@@ -742,6 +771,7 @@ def student_grade(request, class_name, student_name):
                 is_part = True
                 break
     else:
+        messages.error(request, "You are not a teacher for that class")
         print('You are not a teacher of that class')
         return redirect('class:class_info', class_name)
 
@@ -751,7 +781,8 @@ def student_grade(request, class_name, student_name):
         try:
             grades = Grade.objects.get(studentName=student, className = cl)
         except Grade.DoesNotExist:
-            print('Studnent has no grades yet')
+            messages.warning(request, "Student has no grades yet")
+            print('Student has no grades yet')
             grades = ''
         for quiz in class_quizes:
             try:
@@ -767,6 +798,7 @@ def student_grade(request, class_name, student_name):
             except:
                 pass
     else:
+        messages.error(request, "This student is not a part of your class")
         print('This student is not a part of your class')
         return redirect('class:class_grades', class_name)
 
@@ -780,6 +812,7 @@ def enroll(request):
         student = Student.objects.get(user=request.user)
         classes = student.className.all()
     except:
+        messages.error(request, "This action cannot be completed for the following reason(s): You are not a student")
         print("you are not a student")
         return redirect('class:index')
     for cl in classes_list:
@@ -797,23 +830,27 @@ def enroll_class(request, class_name):
         try:
             class_name = Class.objects.get(id=class_id)
         except Class.DoesNotExist:
+            messages.error(request, "Class Does not exist")
             print('Class Does not exist')
             return redirect('class:index')
 
         try:
             student = Student.objects.get(user=request.user)
         except Student.DoesNotExist:
+            messages.error(request, "Student Does not exist")
             print("Student does not exist")
             return redirect("class:enroll")
 
         try:
             EnrollementsAwaiting.objects.get(student=student, class_name=class_name)
+            messages.error(request, "You have already submitted a request to enroll in this class please wait you administration response!")
             print("You have already submitted a request to enroll in this class please wait you administration response!")
             return redirect("class:enroll")
         except:
             pass
         
         EnrollementsAwaiting(student=student, class_name=class_name).save()
+        messages.success(request, f"Your request to enroll for class \"{class_name.name}\" was submitted please wait patiently for your application to be reviewed!")
         print(f"Your request to enroll for class \"{class_name.name}\" was submitted please wait patiently for your application to be reviewed!")
         return redirect('class:enroll')
 
@@ -821,15 +858,18 @@ def enroll_class(request, class_name):
         student = Student.objects.get(user=request.user)
         classes = student.className.all()
     except:
+        messages.error(request, "The following error has occured: You are not a student")
         print("you are not a student")
         return redirect('class:index')
     try:
         class_obj = Class.objects.get(name=class_name)
     except Class.DoesNotExist:
+        messages.error(request, "Class does not exist")
         print('Class Does not exist')
         return redirect('class:index')
 
     if class_obj in classes:
+        messages.error(request, "You are already enrolled in that class")
         print("You are already enrolled in that class")
         return redirect('class:class_info', class_obj.name)
 
@@ -847,19 +887,23 @@ def check_enrollement_submissions(request):
         try:
             class_name = Class.objects.get(id=class_id)
         except Class.DoesNotExist:
+            messages.error(request, "Class does not exist")
             print('Class Does not exist')
             return redirect('class:index')
 
         try:
             student = Student.objects.get(id=student_id)
         except Student.DoesNotExist:
+            messages.error(request, "Student does not exist")
             print("Student Does Not Exist")
             return redirect('class:index')
 
         if approve == 'yes':
             student.className.add(class_name)
+            messages.success(request, f"student {student.user.username} successfully enrolled in {class_name}")
             print(f'student {student.user.username} successfully enrolled in {class_name}')
         else:
+            messages.error(request, "Declined")
             print('declined')
         
         EnrollementsAwaiting.objects.filter(student=student, class_name=class_name).delete()

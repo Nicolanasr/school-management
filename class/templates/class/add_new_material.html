@@ -3,7 +3,15 @@
 {% block content %}
 
 {% for msg in messages %}
-{{msg}}
+{% if msg.tags == "error" %}
+<div class="alert alert-danger" role="alert">
+    {{msg}}
+</div>
+{%else%}
+<div class="alert alert-{{ msg.tags }}" role="alert">
+    {{msg}}
+</div>
+{% endif %}
 {% endfor %}
 
 <div>
@@ -77,10 +85,10 @@
                 <h5 class="modal-title" id="exampleModalLabel">Add new module</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{% url 'class:new_module' %}" method="POST" >
+            <form action="{% url 'class:new_module' %}" method="POST">
                 {% csrf_token %}
                 <div class="modal-body">
-                    <div id="new_module">  
+                    <div id="new_module">
                         <input type="text" hidden>
                     </div>
                     <div class="mb-3">
@@ -89,7 +97,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="new_module_desc">Module description</label>
-                        <textarea class="form-control" id="new_module_desc" name="new_module_desc" ></textarea>
+                        <textarea class="form-control" id="new_module_desc" name="new_module_desc"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -109,7 +117,7 @@
                 <h5 class="modal-title" id="exampleModalLabel">Add new chapter</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{% url 'class:new_chapter' %}" method="POST" >
+            <form action="{% url 'class:new_chapter' %}" method="POST">
                 {% csrf_token %}
                 <div class="modal-body">
                     <!-- <select name="class_name_add" id="" class="form-select form-select-md mb-3" required>
@@ -118,7 +126,7 @@
                         <option value="{{ item.id }}"> {{ item.name }} </option>
                         {% endfor %}
                     </select> -->
-                    <div id="new_chapter">  
+                    <div id="new_chapter">
                         <input type="text" hidden>
                     </div>
                     <div class="mb-3">
@@ -127,7 +135,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="new_chapter_desc">Chapter description</label>
-                        <textarea class="form-control" id="new_chapter_desc" name="new_chapter_desc" ></textarea>
+                        <textarea class="form-control" id="new_chapter_desc" name="new_chapter_desc"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -170,8 +178,8 @@
                     $("#selectmodules option").remove();
                     $("#selectmodules").append(
                         '<option>---Select Chapter first---</option>')
-                    
-                    if ($("#selectclass option:selected").val() == ''){
+
+                    if ($("#selectclass option:selected").val() == '') {
                         $("#selectchapters").append(
                             '<option>---Select Class first---</option>')
                         $('#new_chapter_btn').addClass('d-none')
@@ -181,10 +189,10 @@
                     //     $("#selectchapters").append(
                     //         '<option>---Select Class first---</option>')
                     // }
-                     else {
+                    else {
                         $("#selectchapters").append('<option>Select Chapter</option>');
                         $('#new_chapter_btn').removeClass('d-none')
-                        
+
                     }
                     for (var i = success.length - 1; i >= 0; i--) {
                         $("#selectchapters").append('<option value=' + success[i].id + '>' +
@@ -220,7 +228,7 @@
                     }
                     $("#form4").addClass("d-none");
                     $("#selectmodules option").remove();
-                    if ($("#selectchapters option:selected").val() == ''){
+                    if ($("#selectchapters option:selected").val() == '') {
                         $("#selectmodules").append(
                             '<option>---Select Chapter first---</option>')
                         $('#new_module_btn').addClass('d-none')
@@ -288,12 +296,14 @@
         $('#new_chapter_btn').click(function (e) {
             var class_name = ($("#selectclass option:selected").val())
             $('#new_chapter input').remove()
-            $('#new_chapter').append("<input type='text' name='class_id_for_new_chapter' value=" + class_name + " hidden>")
+            $('#new_chapter').append("<input type='text' name='class_id_for_new_chapter' value=" +
+                class_name + " hidden>")
         })
         $('#new_module_btn').click(function (e) {
             var chapter_name = ($("#selectchapters option:selected").val())
             $('#new_module input').remove()
-            $('#new_module').append("<input type='text' name='chapter_id_for_new_module' value=" + chapter_name + " hidden>")
+            $('#new_module').append("<input type='text' name='chapter_id_for_new_module' value=" +
+                chapter_name + " hidden>")
         })
     });
 </script>

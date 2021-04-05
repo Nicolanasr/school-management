@@ -22,9 +22,16 @@
 </ul> -->
 
 {% for msg in messages %}
-{{msg}}
+{% if msg.tags == "error" %}
+<div class="alert alert-danger" role="alert">
+    {{msg}}
+</div>
+{%else%}
+<div class="alert alert-{{ msg.tags }}" role="alert">
+    {{msg}}
+</div>
+{% endif %}
 {% endfor %}
-
 {% if teacher_classes %}
 <form action="" method="POST">
     {% csrf_token %}

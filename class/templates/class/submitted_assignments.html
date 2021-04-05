@@ -11,6 +11,18 @@
     }
 </style>
 
+{% for msg in messages %}
+{% if msg.tags == "error" %}
+<div class="alert alert-danger" role="alert">
+    {{msg}}
+</div>
+{%else%}
+<div class="alert alert-{{ msg.tags }}" role="alert">
+    {{msg}}
+</div>
+{% endif %}
+{% endfor %}
+
 <h4>{{assignment.0.title}} Submissions so far:</h4>
 
 <table class="table">
