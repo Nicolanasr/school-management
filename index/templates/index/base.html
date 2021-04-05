@@ -52,9 +52,13 @@
 					{% endif %}
 
 				</ul>
+				{% if request.user.is_superuser %}
+					<a href="{% url 'class:check_enrollement_submissions' %}" class="btn btn-info p-1">check enrollement submissions</a>
+				{% else %}
 				<div class="mb-3">
 					<a href="{% url 'class:enroll' %}" class="btn btn-info">Enroll in Classes</a>
 				</div>
+				{% endif %}
 				<!-- <div class="mb-5">
 					<h3 class="h6 mb-3">Subscribe for newsletter</h3>
 					<form action="#" class="subscribe-form">
