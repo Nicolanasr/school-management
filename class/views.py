@@ -292,7 +292,7 @@ def new_chapter(request):
                 return redirect('class:add_new_mat')
     else:
         return redirect('class:add_new_mat')
-#comment
+
 def new_module(request):
     if request.method == 'POST':
         chapter_id = request.POST.get('chapter_id_for_new_module')
