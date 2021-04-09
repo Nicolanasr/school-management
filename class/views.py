@@ -9,12 +9,15 @@ from django.contrib import messages
 from django.http import response
 from django.http.response import Http404, HttpResponse
 from django.shortcuts import redirect, render
-from .models import Assignment, Comments, Results, Student, Class, Teacher, Grade, ClassMaterials, ClassMaterialsChapter, ClassMaterialsModule, Files, Times, SubmittedAssignments, Quiz, Answers, Question, EnrollementsAwaiting
+from .models import Assignment, Comments, Results, Student, Class, Teacher, Grade, ClassMaterials, \
+    ClassMaterialsChapter, ClassMaterialsModule, Files, Times, SubmittedAssignments, Quiz, Answers, Question, \
+    EnrollementsAwaiting
 import json
 from django.http import HttpResponse
 from datetime import datetime, time, timezone, timedelta
 import datetime
 import re
+
 
 def index(request):
     if request.user.is_authenticated:
@@ -55,12 +58,12 @@ def index(request):
         #     #     print('class: ', time.class_name, 'day: ', time.day, 'time: ', time.time)
         grades = []
         gr_int = []
-        if(request.user.groups.filter(name='Students').exists()):
+        if (request.user.groups.filter(name='Students').exists()):
             for class_name in classes:
                 try:
                     grade = Grade.objects.get(studentName=us, className=class_name)
                     grades.append(grade)
-                    gr_int.append(round((grade.grade/grade.number_of_total_grades)*100, 2))
+                    gr_int.append(round((grade.grade / grade.number_of_total_grades) * 100, 2))
                 except:
                     pass
         elif (request.user.groups.filter(name='Teachers').exists()):
@@ -71,14 +74,15 @@ def index(request):
             grades = None
 
         print(grades)
-            
+
         ctx = {'days': dai, 'sched': sched, 'classes': classes, 'grades': grades, 'gr_int': gr_int}
         return render(request, 'class/index.html', ctx)
     else:
         return redirect('index:login')
 
+
 def class_info(request, class_name):
-    if(request.user.groups.filter(name='Teachers').exists()):
+    if (request.user.groups.filter(name='Teachers').exists()):
         is_teacher = True
     else:
         is_teacher = False
@@ -121,7 +125,7 @@ def class_info(request, class_name):
                 else:
                     status_list.append('awaiting submission')
 
-        chapters = ClassMaterialsChapter.objects.filter(className = className).order_by('-date_added')
+        chapters = ClassMaterialsChapter.objects.filter(className=className).order_by('-date_added')
         chap_mod = {}
         for chapter in chapters:
             module = ClassMaterialsModule.objects.filter(chapter=chapter)
@@ -136,12 +140,14 @@ def class_info(request, class_name):
         quizes_list = []
         # print(Student.objects.filter(className=className))
         for quiz in quizes:
-            timezone_offset = + 2.0 
+            timezone_offset = + 2.0
             tzinfo = timezone(timedelta(hours=timezone_offset))
-            if quiz.max_time_to_take > datetime.datetime.now(tzinfo) and len(quiz.results_set.filter(user=request.user)) == 0:
+            if quiz.max_time_to_take > datetime.datetime.now(tzinfo) and len(
+                    quiz.results_set.filter(user=request.user)) == 0:
                 quizes_list.append(quiz)
             for student in Student.objects.filter(className=className):
-                if quiz.max_time_to_take < datetime.datetime.now(tzinfo) and len(quiz.results_set.filter(user=student.user)) == 0 :
+                if quiz.max_time_to_take < datetime.datetime.now(tzinfo) and len(
+                        quiz.results_set.filter(user=student.user)) == 0:
                     Results(user=student.user, quiz=quiz, score=0).save()
                     number_of_total_grades = int(quiz.points)
                     gr = 0
@@ -153,16 +159,20 @@ def class_info(request, class_name):
                         grade = Grade(className=className, studentName=student)
                         grade.save()
                         print(grade.studentName)
-                    Grade.objects.select_for_update().filter(className=className, studentName=student).update(number_of_total_grades=number_of_total_grades, grade=gr)
-        
+                    Grade.objects.select_for_update().filter(className=className, studentName=student).update(
+                        number_of_total_grades=number_of_total_grades, grade=gr)
+
         assignments = Assignment.objects.filter(class_name=className)
         assignments_list = []
         # print(Student.objects.filter(className=className))
-        date_now = datetime.date(datetime.datetime.now().year, datetime.datetime.now().month, datetime.datetime.now().day)
+        date_now = datetime.date(datetime.datetime.now().year, datetime.datetime.now().month,
+                                 datetime.datetime.now().day)
         for assignment in assignments:
             for student in Student.objects.filter(className=className):
-                if assignment.due_date < date_now and len(SubmittedAssignments.objects.filter(assignment=assignment, submitted_by=student.user)) == 0 and assignment.noted:
-                    SubmittedAssignments(assignment=assignment, submitted_by=student.user, grade=0, status="graded").save()
+                if assignment.due_date < date_now and len(SubmittedAssignments.objects.filter(assignment=assignment,
+                                                                                              submitted_by=student.user)) == 0 and assignment.noted:
+                    SubmittedAssignments(assignment=assignment, submitted_by=student.user, grade=0,
+                                         status="graded").save()
                     number_of_total_grades = int(assignment.points)
                     gr = 0
                     try:
@@ -173,9 +183,8 @@ def class_info(request, class_name):
                         grade = Grade(className=className, studentName=student)
                         grade.save()
                         print(grade.studentName)
-                    Grade.objects.select_for_update().filter(className=className, studentName=student).update(number_of_total_grades=number_of_total_grades, grade=gr)
-
-
+                    Grade.objects.select_for_update().filter(className=className, studentName=student).update(
+                        number_of_total_grades=number_of_total_grades, grade=gr)
 
         comments = Comments.objects.filter(class_name=className, parent=None)
         if request.method == 'POST':
@@ -196,22 +205,25 @@ def class_info(request, class_name):
             new_c = Comments(author=request.user, text=new_comment, class_name=className, parent=parent_obj)
             new_c.save()
             return redirect('class:class_info', class_name)
-                
-        ctx = {'className': className, 'chap_mod': chap_mod, 'is_teacher':is_teacher, 'comments': comments, 'class_assignments': class_assignments, 'status_list': status_list, 'quizes': quizes_list}
+
+        ctx = {'className': className, 'chap_mod': chap_mod, 'is_teacher': is_teacher, 'comments': comments,
+               'class_assignments': class_assignments, 'status_list': status_list, 'quizes': quizes_list}
     except Class.DoesNotExist:
         ctx = {}
         messages.error(request, "Class Does not exist")
         print('class Does not exist')
     return render(request, 'class/class.html', ctx)
 
+
 def add_new_mat(request):
     try:
         teacher = Teacher.objects.get(user=request.user)
         classes = Class.objects.filter(teacher=teacher)
-        ctx= {'classes': classes}
+        ctx = {'classes': classes}
         return render(request, 'class/add_new_material.html', ctx)
     except:
         return redirect('class:index')
+
 
 def getdetails(request):
     data = {}
@@ -253,8 +265,7 @@ def getdetails(request):
                 all_chapters = selected_chapter.classmaterialsmodule_set.all()
             except:
                 return JsonResponse('', safe=False)
-            
-        
+
         for chapter in all_chapters:
             result_set.append({'name': chapter.name, 'id': chapter.id})
         print(result_set)
@@ -264,6 +275,7 @@ def getdetails(request):
 
     else:
         return redirect('class:add_new_mat')
+
 
 def new_chapter(request):
     if request.method == 'POST':
@@ -292,7 +304,8 @@ def new_chapter(request):
                 return redirect('class:add_new_mat')
     else:
         return redirect('class:add_new_mat')
-#alert  
+
+
 def new_module(request):
     if request.method == 'POST':
         chapter_id = request.POST.get('chapter_id_for_new_module')
@@ -315,7 +328,8 @@ def new_module(request):
                 return redirect('class:add_new_mat')
     else:
         return redirect('class:add_new_mat')
-        
+
+
 def class_assignment(request, class_name, class_assignment_id):
     # if request.method == 'POST':
 
@@ -341,7 +355,8 @@ def class_assignment(request, class_name, class_assignment_id):
         if request.method == 'POST':
             file_posted = request.FILES.get('file')
             print(request.FILES.get('file'))
-            file = SubmittedAssignments(submitted_by=request.user, assignment=assignment, files=file_posted, status='submitted')
+            file = SubmittedAssignments(submitted_by=request.user, assignment=assignment, files=file_posted,
+                                        status='submitted')
             file.save()
             return redirect('class:class_info', class_name)
     else:
@@ -349,8 +364,9 @@ def class_assignment(request, class_name, class_assignment_id):
     ctx = {'assignment': assignment, 'status': stat, 'grade': grade, 'class_name': class_name}
     return render(request, 'class/assignment.html', ctx)
 
+
 def new_assignment(request, class_name):
-    try: 
+    try:
         Class.objects.get(name=class_name)
     except:
         return redirect('class:index')
@@ -363,10 +379,12 @@ def new_assignment(request, class_name):
         if points == '':
             points = None
         due_date = request.POST.get('due_date')
-        assignment = Assignment(title=title, description=description, noted=noted, points=points, class_name=class_name, due_date=due_date)
+        assignment = Assignment(title=title, description=description, noted=noted, points=points, class_name=class_name,
+                                due_date=due_date)
         assignment.save()
         return redirect('class:class_info', class_name.name)
     return render(request, 'class/new_assignment.html')
+
 
 def view_all_submitted_assignment(request, class_name):
     try:
@@ -375,7 +393,7 @@ def view_all_submitted_assignment(request, class_name):
         messages.error(request, "Class Does not exist")
         print('Class does not exist')
         return redirect('class:index')
-        
+
     if request.user.groups.filter(name='Teachers').exists() and cl.teacher.user == request.user:
         all_ass = Assignment.objects.filter(class_name=cl)
         ctx = {'all_ass': all_ass, 'class_name': cl}
@@ -385,8 +403,9 @@ def view_all_submitted_assignment(request, class_name):
         print('You do not have access')
         return redirect('class:class_info', class_name)
 
+
 def view_submitted_assignment(request, class_name, assignment):
-    try: 
+    try:
         class_name = Class.objects.get(name=class_name)
     except:
         return redirect('class:index')
@@ -404,7 +423,7 @@ def view_submitted_assignment(request, class_name, assignment):
                     grade=points, status='graded'
                 )
                 submitted_by = SubmittedAssignments.objects.get(id=submitted_id).submitted_by
-                try: 
+                try:
                     student = Student.objects.get(user=submitted_by)
                 except Student.DoesNotExist:
                     messages.error(request, "student does not existt")
@@ -419,26 +438,28 @@ def view_submitted_assignment(request, class_name, assignment):
                 except Grade.DoesNotExist:
                     grade = Grade(className=class_name, studentName=student)
                     grade.save()
-                Grade.objects.select_for_update().filter(className=class_name, studentName=student).update(number_of_total_grades=number_of_total_grades, grade=gr)
+                Grade.objects.select_for_update().filter(className=class_name, studentName=student).update(
+                    number_of_total_grades=number_of_total_grades, grade=gr)
 
         assignment = Assignment.objects.filter(id=assignment)
-        
+
         ctx = {'assignment': assignment}
         return render(request, 'class/submitted_assignments.html', ctx)
     else:
         return redirect('class:class_info', class_name)
 
+
 def new_quiz(request, class_name):
     data = {}
     if request.user.groups.filter(name='Teachers').exists():
-        #* to remove
+        # * to remove
         # teacher = Teacher.objects.get(user=request.user)
         # all_classes = Class.objects.filter(teacher=teacher)
 
         # if request.method == 'POST':
         #     for key, value in request.POST.items():
         #         print('%s' % (value) )
-        
+
         if request.is_ajax() and request.POST.get('question') is not None:
             print('Question: ', request.POST.get('question'))
             print('quiz_id: ', request.POST.get('quiz_id'))
@@ -452,7 +473,7 @@ def new_quiz(request, class_name):
                     list.append(value)
             i = 0
             while i < len(list):
-                ans = Answers(text=list[i:i+2][0], correct=list[i:i+2][1], question=quest)
+                ans = Answers(text=list[i:i + 2][0], correct=list[i:i + 2][1], question=quest)
                 ans.save()
                 i = i + 2
             print(list)
@@ -489,6 +510,7 @@ def new_quiz(request, class_name):
     else:
         return redirect('class:class_info', class_name)
 
+
 def quiz(request, class_name, quiz_id):
     try:
         quiz = Quiz.objects.get(id=quiz_id)
@@ -496,9 +518,7 @@ def quiz(request, class_name, quiz_id):
         messages.error(request, "Quiz does not exist")
         print('quiz Does not exist')
         return redirect('class:class_info', class_name)
-    
 
-    
     quiz_class = quiz.class_name
     student_class = False
     try:
@@ -530,7 +550,7 @@ def quiz(request, class_name, quiz_id):
                     reg = key.split('_')
                     quest_id = reg[0].strip('question')
                     choice_id = reg[1].strip('choice')
-                    answers_list.append([reg[0].strip('question'),reg[1].strip('choice')])
+                    answers_list.append([reg[0].strip('question'), reg[1].strip('choice')])
                     answer = Answers.objects.get(id=choice_id)
                     question = Question.objects.get(id=quest_id)
                     # correct_answers_list.append([ans.question, ans.answer])
@@ -567,15 +587,14 @@ def quiz(request, class_name, quiz_id):
                 else:
                     score_count -= 1
             print(score_count)
-            
+
             if score_count <= 0:
                 print('Your score is: ', 0)
                 score = 0
             else:
-                score = int((quiz.points*score_count)/total_ans_count)
+                score = int((quiz.points * score_count) / total_ans_count)
                 print('Your score is: ', score, '%')
-            
-          
+
             rere = Results.objects.filter(user=request.user, quiz=quiz, score=0)
             print(rere)
             Results.objects.select_for_update().filter(user=request.user, quiz=quiz, score=0).update(score=score)
@@ -591,10 +610,11 @@ def quiz(request, class_name, quiz_id):
                 except Grade.DoesNotExist:
                     grade = Grade(className=clss, studentName=student)
                     grade.save()
-                Grade.objects.select_for_update().filter(className=clss, studentName=student).update(number_of_total_grades=number_of_total_grades, grade=gr)
+                Grade.objects.select_for_update().filter(className=clss, studentName=student).update(
+                    number_of_total_grades=number_of_total_grades, grade=gr)
             except:
                 pass
-      
+
             # print(correct_answers_list)
             # print(checks)
             # for c in checks:
@@ -618,6 +638,7 @@ def quiz(request, class_name, quiz_id):
         messages.error(request, "You do not have access")
         print('you do not have access')
         return redirect('class:class_info', class_name)
+
 
 def submitted_quizes(request, class_name):
     if request.user.groups.filter(name='Teachers').exists():
@@ -646,6 +667,7 @@ def submitted_quizes(request, class_name):
         print("you do not have access")
         return redirect('class:class_info', class_name)
 
+
 def view_submitted_quiz(request, class_name, quiz_id):
     try:
         quiz = Quiz.objects.get(id=quiz_id)
@@ -653,14 +675,14 @@ def view_submitted_quiz(request, class_name, quiz_id):
         messages.error(request, "Quiz does not exist")
         print('quiz Does not exist')
         return redirect('class:class_info', class_name)
-    
+
     try:
         cl = Class.objects.get(name=class_name)
     except Class.DoesNotExist:
         messages.error(request, "Quiz does not exist")
         print('Class Does not exist')
         return redirect('class:index')
-        
+
     if request.user.groups.filter(name='Teachers').exists():
         if cl.teacher.user == request.user:
             pass
@@ -676,6 +698,7 @@ def view_submitted_quiz(request, class_name, quiz_id):
         messages.error(request, "You do not have access")
         print("you do not have access")
         return redirect('class:class_info', class_name)
+
 
 def class_grades(request, class_name):
     is_teacher = False
@@ -708,9 +731,9 @@ def class_grades(request, class_name):
         messages.error(request, "You cannot perform this action for the following reason(s): You are not a student")
         print("You are not a student")
         return redirect('class:class_info', class_name)
-    
+
     try:
-        grades = Grade.objects.get(studentName=student, className = cl)
+        grades = Grade.objects.get(studentName=student, className=cl)
     except Grade.DoesNotExist:
         messages.error(request, "Student has no grades yet")
         print('Student has no grades yet')
@@ -732,8 +755,9 @@ def class_grades(request, class_name):
             pass
     print(submitted_ass)
 
-    ctx ={'grades': grades, 'res': res, 'submitted_ass': submitted_ass}
+    ctx = {'grades': grades, 'res': res, 'submitted_ass': submitted_ass}
     return render(request, 'class/class_grades.html', ctx)
+
 
 def student_grade(request, class_name, student_name):
     try:
@@ -742,7 +766,7 @@ def student_grade(request, class_name, student_name):
         messages.error(request, "Student has no grades yet")
         print('You are not a teacher')
         return redirect('class:class_info', class_name)
-    
+
     try:
         cl = Class.objects.get(name=class_name)
     except Class.DoesNotExist:
@@ -779,7 +803,7 @@ def student_grade(request, class_name, student_name):
         class_quizes = Quiz.objects.filter(class_name=cl)
         res = []
         try:
-            grades = Grade.objects.get(studentName=student, className = cl)
+            grades = Grade.objects.get(studentName=student, className=cl)
         except Grade.DoesNotExist:
             messages.warning(request, "Student has no grades yet")
             print('Student has no grades yet')
@@ -802,8 +826,9 @@ def student_grade(request, class_name, student_name):
         print('This student is not a part of your class')
         return redirect('class:class_grades', class_name)
 
-    ctx = {'grades':grades, 'res': res, 'submitted_ass': submitted_ass}
+    ctx = {'grades': grades, 'res': res, 'submitted_ass': submitted_ass}
     return render(request, 'class/student_grade.html', ctx)
+
 
 def enroll(request):
     classes_list = Class.objects.all()
@@ -824,6 +849,7 @@ def enroll(request):
     ctx = {"classes_list": classes_to_enroll}
     return render(request, 'class/enroll.html', ctx)
 
+
 def enroll_class(request, class_name):
     if request.method == "POST":
         class_id = request.POST.get('class_id')
@@ -843,15 +869,19 @@ def enroll_class(request, class_name):
 
         try:
             EnrollementsAwaiting.objects.get(student=student, class_name=class_name)
-            messages.error(request, "You have already submitted a request to enroll in this class please wait you administration response!")
-            print("You have already submitted a request to enroll in this class please wait you administration response!")
+            messages.error(request,
+                           "You have already submitted a request to enroll in this class please wait you administration response!")
+            print(
+                "You have already submitted a request to enroll in this class please wait you administration response!")
             return redirect("class:enroll")
         except:
             pass
-        
+
         EnrollementsAwaiting(student=student, class_name=class_name).save()
-        messages.success(request, f"Your request to enroll for class \"{class_name.name}\" was submitted please wait patiently for your application to be reviewed!")
-        print(f"Your request to enroll for class \"{class_name.name}\" was submitted please wait patiently for your application to be reviewed!")
+        messages.success(request,
+                         f"Your request to enroll for class \"{class_name.name}\" was submitted please wait patiently for your application to be reviewed!")
+        print(
+            f"Your request to enroll for class \"{class_name.name}\" was submitted please wait patiently for your application to be reviewed!")
         return redirect('class:enroll')
 
     try:
@@ -879,6 +909,7 @@ def enroll_class(request, class_name):
     ctx = {"class_obj": class_obj, "times": times}
     return render(request, 'class/enroll_class.html', ctx)
 
+
 def check_enrollement_submissions(request):
     if request.method == "POST":
         student_id = request.POST.get('student_id')
@@ -905,21 +936,17 @@ def check_enrollement_submissions(request):
         else:
             messages.error(request, "Declined")
             print('declined')
-        
-        EnrollementsAwaiting.objects.filter(student=student, class_name=class_name).delete()
 
+        EnrollementsAwaiting.objects.filter(student=student, class_name=class_name).delete()
 
     if not request.user.is_superuser:
         print('You cannot do that')
         return redirect('class:index')
-    
+
     submissions = EnrollementsAwaiting.objects.all()
 
     ctx = {"submissions": submissions}
     return render(request, 'class/check_enrollement_submissions.html', ctx)
-
-
-
 
 # def new_for_class(request):
 #     groups = request.user.groups.all()
@@ -958,9 +985,9 @@ def check_enrollement_submissions(request):
 #         except:
 #             messages.error(request, 'Please Select a chapter first') 
 #             return render(request, 'class/test.html', ctx)
-        
+
 #         return redirect('class:new_for_module', chapter)
-       
+
 #     return render(request, 'class/test.html', ctx)
 
 # def new_for_module(request, chapter):
@@ -988,7 +1015,7 @@ def check_enrollement_submissions(request):
 #         if classe.teacher.user.username != request.user.username:
 #             messages.error(request, 'You do not have access to that page')
 #             return redirect('class:index')
-        
+
 #         c = classe.classmaterialschapter_set.all()
 #         for clas in c:
 #             if chapter_name == clas.name:
@@ -1005,10 +1032,10 @@ def check_enrollement_submissions(request):
 #     if request.method == 'POST':
 #         mat_name = request.POST.get('name')
 #         mat_url = request.POST.get('url')
-        
+
 #         f = Files(file_name=mat_name, url=mat_url, ClassMaterialsModule=modu)
 #         f.save()
 #         return redirect('class:index')
-        
+
 
 #     return render(request, 'class/test.html', ctx)

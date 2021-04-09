@@ -29,7 +29,7 @@ DEBUG = True
 
 
 # ALLOWED_HOSTS = ['nicolas-school-management.herokuapp.com']
-ALLOWED_HOSTS = ['nicolas-school-management.herokuapp.com', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['nicolas-school-management.herokuapp.com', '127.0.0.1', 'localhost', '10.0.2.15']
 
 
 # Application definition
@@ -98,8 +98,6 @@ WSGI_APPLICATION = 'schoolManagement.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
-
-
 
 
 DATABASES = {
